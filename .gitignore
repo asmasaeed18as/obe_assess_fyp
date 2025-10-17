@@ -1,0 +1,38 @@
+# Python / Django
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+db.sqlite3
+.env
+.venv/
+venv/
+.env/
+*.log
+*.pot
+*.py[cod]
+__pycache__/
+*.so
+local_settings.py
+media/
+staticfiles/
+*.db
+
+# Node / React
+node_modules/
+npm-debug.log
+yarn-error.log
+build/
+dist/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# VS Code
+.vscode/
+
+# Mac / Windows junk
+.DS_Store
+Thumbs.db
