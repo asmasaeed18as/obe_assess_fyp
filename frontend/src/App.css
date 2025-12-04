@@ -3,16 +3,18 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Segoe UI", Roboto, sans-serif;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
 body {
-  background-color: #f9fafb; /* soft gray background */
-  color: #1f2937; /* neutral text */
+  background-color: #f9fafb; /* Soft gray background */
+  color: #1f2937; /* Neutral dark text */
   line-height: 1.6;
+  min-height: 100vh;
 }
 
-/* Container */
+/* === Generic Container (Good for Login/Signup pages) === */
+/* Note: The Assessment page uses its own .assessment-container class to be wider */
 .container {
   max-width: 480px;
   margin: 50px auto;
@@ -22,64 +24,37 @@ body {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Headings */
-h2 {
+/* === Global Typography === */
+h1, h2, h3 {
+  color: #111827;
+  font-weight: 700;
   margin-bottom: 1rem;
-  text-align: center;
-  color: #2563eb; /* primary blue */
 }
 
-/* Inputs */
-input,
-select {
-  width: 100%;
-  padding: 12px;
-  margin: 0.5rem 0 1rem 0;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  transition: border-color 0.3s;
-}
-
-input:focus,
-select:focus {
-  border-color: #2563eb;
-  outline: none;
-}
-
-/* Buttons */
-button {
-  width: 100%;
-  padding: 12px;
-  background: #2563eb;
-  color: white;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-button:hover {
-  background: #1e40af;
-}
-
-/* Error Message */
-.error {
-  margin-top: 0.5rem;
-  padding: 0.75rem;
-  background: #fee2e2;
-  color: #b91c1c;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-/* Links */
 a {
   color: #2563eb;
   text-decoration: none;
+  transition: color 0.2s;
 }
 
 a:hover {
   text-decoration: underline;
+  color: #1e40af;
+}
+
+/* === Global Button/Input Defaults === */
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.error-msg {
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 10px;
 }

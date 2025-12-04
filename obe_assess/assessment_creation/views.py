@@ -2,9 +2,10 @@
 import requests, json
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
+from rest_framework import status
+from rest_framework.permissions import AllowAny
 from .models import LectureMaterial, Assessment
-from .serializers import LectureMaterialSerializer, AssessmentSerializer
+from .serializers import AssessmentSerializer
 from .utils import extract_text_from_pdf_filefield, render_assessment_pdf
 from django.conf import settings
 
@@ -12,50 +13,68 @@ from django.conf import settings
 LLM_SERVICE_URL = getattr(settings, "LLM_SERVICE_URL", "http://127.0.0.1:8001/generate")
 
 class UploadMaterialAndGenerateAssessment(APIView):
-    permission_classes = [permissions.IsAuthenticated]  # change as needed
+    permission_classes = [AllowAny]  # change as needed
 
     def post(self, request):
         """
         Accepts multipart/form-data with:
          - file (pdf)
-         - clo
-         - bloom_level
-         - assessment_type (optional)
+         - outline (pdf, optional)
+         - assessment_type (string)
+         - questions_config (JSON stringified list of objects)
+        
         This view:
-         1) saves the uploaded PDF as LectureMaterial
-         2) extracts text
-         3) calls LLM service with text + clo + bloom
-         4) saves Assessment (result_json) and generated PDF
-         5) returns Assessment data
+         1) Saves the uploaded PDF as LectureMaterial
+         2) Extracts text from material (and outline if provided)
+         3) Calls LLM service with text + detailed question config
+         4) Saves Assessment (result_json) and generated PDF
+         5) Returns Assessment data
         """
+        # 1. Extract Files and Data
         uploaded_file = request.FILES.get("file")
-        clo = request.data.get("clo")
-        bloom = request.data.get("bloom_level", "C3")
-        assessment_type = request.data.get("assessment_type", "quiz")
+        outline_file = request.FILES.get("outline")  # Optional
+        
+        assessment_type = request.data.get("assessment_type", "Assignment")
+        config_str = request.data.get("questions_config")
 
-        if not uploaded_file or not clo:
-            return Response({"error": "file and clo are required"}, status=status.HTTP_400_BAD_REQUEST)
+        # Basic Validation
+        if not uploaded_file:
+            return Response({"error": "Material file is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not config_str:
+            return Response({"error": "Questions configuration is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 1) save lecture material
+        # Parse the JSON string from FormData
+        try:
+            questions_config = json.loads(config_str)
+        except json.JSONDecodeError:
+            return Response({"error": "Invalid JSON format for questions_config"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Save Lecture Material
         lecture = LectureMaterial.objects.create(title=uploaded_file.name, file=uploaded_file)
 
-        # 2) extract text
+        # 3. Extract Text (Material + Optional Outline)
         try:
-            text = extract_text_from_pdf_filefield(lecture.file)
-            lecture.extracted_text = text[:100000]  # optional truncate for DB
+            text_content = extract_text_from_pdf_filefield(lecture.file)
+            
+            # If outline exists, append it to text context
+            if outline_file:
+                outline_text = extract_text_from_pdf_filefield(outline_file)
+                # Combine texts: Outline gives context, Material gives specifics
+                text_content = f"=== COURSE OUTLINE ===\n{outline_text}\n\n=== LECTURE MATERIAL ===\n{text_content}"
+            
+            lecture.extracted_text = text_content[:100000]  # Truncate for DB storage
             lecture.save()
         except Exception as e:
             return Response({"error": f"Failed to extract PDF text: {str(e)}"}, status=500)
 
-        # 3) call LLM microservice
+        # 4. Call LLM Microservice
+        # Payload matches the new structure expected by the modified LLM Service
         payload = {
-            "text": text[:30000],
-            "clo": clo,
-    "bloom_level": bloom,
-    "assessment_type": assessment_type,
-    "num_questions": int(request.data.get("num_questions", 3)),
-    "difficulty": request.data.get("difficulty", "medium"),
-}
+            "text": text_content[:30000],  # Send a reasonable chunk to LLM
+            "assessment_type": assessment_type,
+            "questions_config": questions_config  # Sending the list of configs
+        }
 
         try:
             resp = requests.post(LLM_SERVICE_URL, json=payload, timeout=180)
@@ -71,27 +90,32 @@ class UploadMaterialAndGenerateAssessment(APIView):
         if not questions or not isinstance(questions, list):
             return Response({"error": "Invalid response from LLM service"}, status=500)
 
-        # 4) Save Assessment object
+        # 5. Save Assessment object
+        # Generate a simple summary string for the legacy 'clo' field if needed
+        # (e.g., "CLO-1, CLO-2")
+        clo_summary = ", ".join(sorted(list(set([q.get('clo', '') for q in questions_config if q.get('clo')]))))
+        
         assessment = Assessment.objects.create(
             material=lecture,
-            clo=clo,
-            bloom_level=bloom,
             assessment_type=assessment_type,
+            questions_config=questions_config,  # Store the input settings
+            clo=clo_summary,                    # Store summary
             result_json=llm_result
         )
 
-        # 5) Generate PDF and save to assessment.pdf
+        # 6. Generate PDF and save to assessment.pdf
         try:
-            pdf_content = render_assessment_pdf(f"Assessment - {lecture.title}", questions)
+            # Render PDF with the new question list
+            pdf_content = render_assessment_pdf(f"{assessment_type} - {lecture.title}", questions)
             filename = f"assessment_{assessment.id}.pdf"
             assessment.pdf.save(filename, pdf_content)
             assessment.save()
         except Exception as e:
-            # If pdf generation fails, still return the JSON result
+            # If PDF generation fails, still return the JSON result with a warning
             return Response({
-                "warning": f"Failed to generate PDF: {str(e)}",
-                "result_json": llm_result
-            }, status=200)
+                "warning": f"Assessment generated but PDF failed: {str(e)}",
+                "assessment": AssessmentSerializer(assessment).data
+            }, status=201)
 
         serializer = AssessmentSerializer(assessment)
         return Response(serializer.data, status=201)
