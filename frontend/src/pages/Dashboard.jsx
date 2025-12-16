@@ -1,50 +1,64 @@
-// src/pages/Dashboard.jsx
-import React from "react";
-import { NavLink } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import React, { useContext } from "react";
+import { NavLink, Outlet } from "react-router-dom"; 
+import AuthContext from "../contexts/AuthContext";
 import "../styles/Dashboard.css";
 
-export default function Dashboard() {
+export default function DashboardLayout() {
+  const { user } = useContext(AuthContext);
+
+  if (!user) return <div>Loading...</div>;
+
   return (
     <div className="dashboard">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <h2>EduPortal</h2>
-        <NavLink to="/dashboard" className={({ isActive }) => (isActive ? "active" : "")}>
-          Dashboard
-        </NavLink>
-        <NavLink to="/courses" className={({ isActive }) => (isActive ? "active" : "")}>
-          Courses
-        </NavLink>
-        <NavLink to="/profile" className={({ isActive }) => (isActive ? "active" : "")}>
-          Profile
-        </NavLink>
-        <NavLink to="/settings" className={({ isActive }) => (isActive ? "active" : "")}>
-          Settings
-        </NavLink>
-        <NavLink to="/logout" className={({ isActive }) => (isActive ? "active" : "")}>
-          Logout
-        </NavLink>
-      </div>
+      {/* === Fixed Sidebar === */}
+      <aside className="sidebar">
+        <h2 className="logo">OBE-Assess</h2>
 
-      {/* Main content */}
-      <div className="main-content">
-        <div className="card">
-          <h3>Welcome to your Dashboard</h3>
-          <p>
-            Here you can track your courses, assignments, and performance.
-          </p>
-        </div>
+        <nav className="sidebar-nav">
+          {/* 'end' prop ensures 'Home' is only active at /dashboard exactly */}
+          <NavLink 
+            to="/dashboard" 
+            end
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+          >
+            Home
+          </NavLink>
+          
+          <NavLink 
+            to="/dashboard/create-assessment" 
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+          >
+            Assessment Creation
+          </NavLink>
 
-        <div className="card">
-          <h3>Upcoming Classes</h3>
-          <ul>
-            <li>Math Class - Monday 10 AM</li>
-            <li>Science Workshop - Wednesday 2 PM</li>
-            <li>Sports Training - Friday 5 PM</li>
-          </ul>
-        </div>
-      </div>
+          <NavLink 
+            to="/dashboard/grading" 
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+          >
+            Assessment Grading
+          </NavLink>
+
+          <NavLink 
+            to="/dashboard/analytics" 
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+          >
+            Analytics
+          </NavLink>
+
+          <NavLink 
+            to="/dashboard/settings" 
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+          >
+            Settings
+          </NavLink>
+        </nav>
+      </aside>
+
+      {/* === Dynamic Main Content Area === */}
+      <main className="dashboard-main">
+        {/* The Outlet renders the child page (Home, Detail, Enroll, etc.) */}
+        <Outlet />
+      </main>
     </div>
   );
 }

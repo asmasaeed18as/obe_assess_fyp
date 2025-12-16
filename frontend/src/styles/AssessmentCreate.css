@@ -1,19 +1,21 @@
 /* === Main Container === */
 .assessment-container {
-  min-height: 100vh;
+  /* min-height: 100vh; */
   background: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 40px 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* === Title === */
 .page-title {
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   color: #222;
+  text-align: center;
 }
 
 /* === Form Container === */
@@ -22,7 +24,7 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  max-width: 500px; /* Increased width to accommodate grid rows */
+  max-width: 600px; /* Slightly wider for the grid inputs */
 }
 
 /* === Cards === */
@@ -33,26 +35,21 @@
   flex-direction: column;
   gap: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
 }
 
 .section-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #555;
-  margin-bottom: -5px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #444;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.card-purple {
-  background-color: #ebe7ff;
-}
-
-.card-green {
-  background-color: #e9f7e7;
-}
-
-.card-peach {
-  background-color: #fff2e6;
-}
+.card-purple { background-color: #ebe7ff; border: 1px solid #dcd6f7; }
+.card-green { background-color: #e9f7e7; border: 1px solid #d4edda; }
+.card-peach { background-color: #fff2e6; border: 1px solid #ffe0b2; }
 
 /* === Dynamic Question Configuration === */
 .questions-container {
@@ -62,16 +59,19 @@
 }
 
 .questions-container h3 {
-  font-size: 1.1rem;
-  color: #444;
-  margin: 10px 0 5px;
+  font-size: 1.2rem;
+  color: #333;
+  margin: 15px 0 10px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 5px;
 }
 
 .question-config-card {
-  background-color: #f9f9f9;
-  border: 1px solid #eee;
+  background-color: #fcfcfc;
+  border: 1px solid #e0e0e0;
   position: relative;
-  padding-top: 25px; /* Space for the Q1/Q2 badge */
+  padding-top: 30px;
+  border-radius: 12px;
 }
 
 .q-badge {
@@ -80,35 +80,36 @@
   left: 0;
   background-color: #0974b6;
   color: white;
-  padding: 4px 12px;
+  padding: 4px 14px;
   border-bottom-right-radius: 12px;
-  border-top-left-radius: 12px; /* Matches card radius */
-  font-size: 0.8rem;
+  border-top-left-radius: 11px;
+  font-size: 0.85rem;
   font-weight: bold;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
 }
 
 .grid-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 /* === Input Fields === */
 .input-field {
   width: 100%;
-  padding: 12px 10px;
-  border: 1px solid #c5c5c5;
+  padding: 12px;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  font-size: 0.9rem;
-  color: #000 !important;
+  font-size: 0.95rem;
+  color: #333;
   outline: none;
   background-color: #fff;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .input-field:focus {
-  border-color: #a89efc;
-  box-shadow: 0 0 0 3px rgba(168, 158, 252, 0.1);
+  border-color: #0974b6;
+  box-shadow: 0 0 0 3px rgba(9, 116, 182, 0.1);
 }
 
 /* === Upload Section === */
@@ -116,36 +117,33 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #f6fdf5;
-  padding: 8px 10px;
+  background: #ffffff;
+  padding: 10px 15px;
   border-radius: 10px;
-  border: 1px dashed #c1dfc1;
+  border: 1px dashed #1e7d20;
 }
 
-.input-file {
-  display: none;
-}
+.input-file { display: none; }
 
 .upload-btn {
   background-color: #1e7d20;
   color: #fff;
   font-weight: 600;
   border: none;
-  padding: 8px 18px;
-  border-radius: 8px;
+  padding: 10px 20px;
+  border-radius: 6px;
   cursor: pointer;
   transition: 0.3s ease;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
-.upload-btn:hover {
-  background-color: #146014;
-}
+.upload-btn:hover { background-color: #146014; }
 
 .file-name {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #555;
-  max-width: 150px;
+  font-style: italic;
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -153,67 +151,110 @@
 
 /* === Generate Button === */
 .generate-btn {
-  background: #0974b6;
+  background: linear-gradient(135deg, #0974b6 0%, #075f96 100%);
   border: none;
   border-radius: 30px;
-  padding: 14px;
+  padding: 16px;
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: 0.3s ease;
-  font-size: 1rem;
-  margin-top: 10px;
-  box-shadow: 0 4px 12px rgba(9, 116, 182, 0.3);
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  margin-top: 15px;
+  box-shadow: 0 4px 15px rgba(9, 116, 182, 0.3);
+  width: 100%;
 }
 
 .generate-btn:hover {
-  background-color: #075f96;
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(9, 116, 182, 0.4);
 }
 
 .generate-btn.disabled {
-  background-color: #ccc;
+  background: #bdc3c7;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-/* === Assessment Output === */
+/* === Assessment Result Section === */
 .assessment-result {
-  margin-top: 30px;
+  margin-top: 40px;
   width: 100%;
-  max-width: 700px;
-  text-align: left;
-  color: black;
+  /* max-width: 800px; */
+  animation: fadeIn 0.5s ease-in-out;
 }
 
-.download-link {
-  display: inline-block;
-  margin-top: 15px;
-  background-color: #4a8f3c;
-  color: #fff;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === Result Header with Download Button === */
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #eee;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.result-header h2 {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin: 0;
+}
+
+/* The Zip Download Button */
+.download-zip-btn {
+  background-color: #2e7d32; /* Strong Green */
+  color: white;
   padding: 12px 24px;
   border-radius: 8px;
-  text-decoration: none;
-  font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: background 0.3s;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2);
 }
 
-.download-link:hover {
-  background-color: #3c712f;
+.download-zip-btn:hover {
+  background-color: #1b5e20;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(46, 125, 50, 0.3);
+}
+
+.download-hint {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: -10px;
+  margin-bottom: 20px;
+  font-style: italic;
+  text-align: right;
 }
 
 /* === Error === */
 .error-msg {
-  color: #c20000;
-  background: #ffeaea;
+  color: #d32f2f;
+  background: #ffebee;
   border-radius: 8px;
-  padding: 12px;
+  padding: 15px;
   margin-top: 20px;
   text-align: center;
   width: 100%;
-  max-width: 500px;
-  border: 1px solid #fcc;
+  border: 1px solid #ef9a9a;
+  font-weight: 600;
+}
+
+.questions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }

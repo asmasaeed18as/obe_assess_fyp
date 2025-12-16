@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',  # for logout/blacklist
     'users',
-    'assessment_creation'
+    'assessment_creation',
+    'course_management',
 ]
 
 MIDDLEWARE = [

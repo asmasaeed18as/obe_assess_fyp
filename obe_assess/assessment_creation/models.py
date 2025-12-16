@@ -9,7 +9,6 @@ class LectureMaterial(models.Model):
     title = models.CharField(max_length=255)
     file = models.FileField(upload_to="materials/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    # Stores extracted text from the PDF to avoid re-processing
     extracted_text = models.TextField(blank=True, null=True)
 
     def __str__(self):
@@ -17,25 +16,33 @@ class LectureMaterial(models.Model):
 
 class Assessment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    material = models.ForeignKey(LectureMaterial, on_delete=models.CASCADE, related_name='assessments')
     
-    # The type of assessment (Quiz, Exam, Assignment, etc.)
-    assessment_type = models.CharField(max_length=50)
+    # ✅ NEW: Link Assessment to a specific Course
+    # We use a string reference to avoid circular imports with course_management app
+    course = models.ForeignKey(
+        'course_management.Course', 
+        on_delete=models.CASCADE, 
+        related_name='assessments',
+        null=True, 
+        blank=True
+    )
 
-    # ✅ NEW: Stores the specific configuration for each question 
-    # (e.g. [{"id":1, "clo":"CLO-1", "weightage":"5", ...}])
+    material = models.ForeignKey(LectureMaterial, on_delete=models.CASCADE, related_name='assessments')
+    assessment_type = models.CharField(max_length=50)
+    
+    # Stores specific config: [{"id":1, "clo":"CLO-1", "weightage":"5"}]
     questions_config = models.JSONField(default=list, blank=True)
 
-    # Modified: These are now optional or used for summary/tags since detailed info is in questions_config
+    # Summaries
     clo = models.CharField(max_length=512, blank=True, null=True)
     bloom_level = models.CharField(max_length=50, blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Stores the structured JSON the LLM returned (questions, rubrics, answers)
+    # Stores the LLM result
     result_json = models.JSONField(blank=True, null=True)
 
-    # Stores the generated PDF file
+    # Generated PDF
     pdf = models.FileField(upload_to=assessment_upload_to, blank=True, null=True)
 
     def __str__(self):

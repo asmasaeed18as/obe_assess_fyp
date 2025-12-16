@@ -1,14 +1,17 @@
 :root {
-  --primary: #5b5fc7;
+  --primary: rgb(170, 3, 170);
+  --accent: #2ec4b6;
   --bg: #f7f8fc;
   --card: #ffffff;
+  --text: #1f2937;
   --muted: #6b7280;
   --border: #e5e7eb;
 }
 
-/* PAGE */
-.auth-page {
+/* FULL PAGE CENTERING */
+.login-page {
   min-height: 100vh;
+  width: 100vw;
   background: linear-gradient(135deg, #f7f8fc, #eef0ff);
   display: flex;
   align-items: center;
@@ -16,37 +19,37 @@
 }
 
 /* CARD */
-.auth-card {
+.login-card {
   width: 420px;
   background: var(--card);
-  padding: 44px 36px;
   border-radius: 22px;
+  padding: 48px 36px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.08);
   text-align: center;
 }
 
 /* LOGO */
-.auth-logo {
+.login-logo {
   width: 70px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 /* TEXT */
-.auth-title {
-  font-size: 26px;
+.login-title {
+  font-size: 28px;
   font-weight: 700;
   color: var(--primary);
+  margin-bottom: 6px;
 }
 
-.auth-subtitle {
+.login-subtitle {
   font-size: 14px;
   color: var(--muted);
-  margin-bottom: 28px;
+  margin-bottom: 30px;
 }
 
 /* FORM */
-.auth-form input,
-.auth-form select {
+.login-form input {
   width: 100%;
   padding: 14px 16px;
   margin-bottom: 16px;
@@ -55,44 +58,44 @@
   font-size: 14px;
 }
 
-.auth-form input:focus,
-.auth-form select:focus {
+.login-form input:focus {
   outline: none;
   border-color: var(--primary);
 }
 
 /* BUTTON */
-.auth-btn {
+.login-form button {
   width: 100%;
   padding: 14px;
+  margin-top: 6px;
   background: var(--primary);
   color: white;
   border: none;
   border-radius: 14px;
-  font-size: 15px;
   font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
 }
 
-.auth-btn:hover {
+.login-form button:hover {
   opacity: 0.95;
 }
 
 /* ERROR */
-.auth-error {
-  margin-top: 12px;
-  color: red;
+.login-error {
+  margin-top: 14px;
+  color: #dc2626;
   font-size: 13px;
 }
 
 /* FOOTER */
-.auth-footer {
-  margin-top: 24px;
+.login-footer {
+  margin-top: 26px;
   font-size: 13px;
   color: var(--muted);
 }
 
-.auth-footer span {
+.login-footer span {
   color: var(--primary);
   cursor: pointer;
   font-weight: 500;

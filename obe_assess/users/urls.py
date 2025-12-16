@@ -1,6 +1,6 @@
 # users/urls.py
 from django.urls import path
-from .views import RegisterView, ObtainTokenPairWithUserView, LogoutView, ProfileView, ChangePasswordView, UserListView
+from .views import DashboardDataView, RegisterView, ObtainTokenPairWithUserView, LogoutView, ProfileView, ChangePasswordView, UserListView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -12,4 +12,6 @@ urlpatterns = [
     path("me/", ProfileView.as_view(), name="me"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("", UserListView.as_view(), name="user-list"),  # admin only
+    # ✅ NEW: Dashboard Data Endpoint
+    path('dashboard/', DashboardDataView.as_view(), name='dashboard_data'),
 ]
