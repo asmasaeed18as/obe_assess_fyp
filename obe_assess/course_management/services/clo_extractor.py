@@ -1,4 +1,11 @@
 import re
+import nltk
+
+# Ensure NLTK data is available for the fallback logic
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt', quiet=True)
 
 # Common regex patterns to catch CLOs lines
 CLO_PATTERNS = [
@@ -31,6 +38,7 @@ def extract_clos_from_text(text):
     """
     clos = []
     lines = [l.strip() for l in text.splitlines() if l.strip()]
+    
     # First pass: look for explicit CLO lines
     for line in lines:
         m = re.search(r'(CLO[-\s]?(\d+))[:\.\-\s]+(.+)', line, re.IGNORECASE)
@@ -39,6 +47,7 @@ def extract_clos_from_text(text):
             txt = m.group(3).strip()
             bloom = map_bloom_from_text(txt)
             clos.append({"code": code, "text": txt, "bloom": bloom})
+            
     # Fallback: look for numbered list items like "1. ...", "2) ..."
     if not clos:
         for line in lines:
@@ -46,17 +55,20 @@ def extract_clos_from_text(text):
             if m:
                 txt = m.group(1).strip()
                 bloom = map_bloom_from_text(txt)
-                clos.append({"code": "", "text": txt, "bloom": bloom})
+                # Assign a generic code if none found
+                clos.append({"code": f"CLO-{len(clos)+1}", "text": txt, "bloom": bloom})
+                
     # Final fallback: chunk long paragraphs into sentences and pick top N
     if not clos:
-        import nltk
         try:
             from nltk.tokenize import sent_tokenize
             sents = sent_tokenize(text)
         except Exception:
             # Simple split as fallback
             sents = re.split(r'(?<=[.!?])\s+', text)
+            
         for i, s in enumerate(sents[:10]):
             bloom = map_bloom_from_text(s)
             clos.append({"code": f"CLO-{i+1}", "text": s.strip(), "bloom": bloom})
+            
     return clos

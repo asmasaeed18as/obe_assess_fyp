@@ -2,24 +2,21 @@ from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import Course, CourseEnrollment, CourseOutline, CLO
-from .serializers import CourseSerializer, CourseEnrollmentSerializer, CourseOutlineSerializer, CLOSerializer
-from .utils import extract_text_from_pdf_filefield, extract_text_from_docx_fileobj
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
+from rest_framework.permissions import IsAuthenticated, AllowAny
+
+from .models import Course, CourseEnrollment, CourseOutline, CLO
+from .serializers import (
+    CourseSerializer, 
+    CourseEnrollmentSerializer, 
+    CourseOutlineSerializer, 
+    CLOSerializer
+)
+from .utils import extract_text_from_pdf_filefield, extract_text_from_docx_fileobj
+# ✅ Import the real extractor service
+from .services.clo_extractor import extract_clos_from_text
 
 User = get_user_model()
-
-# --- Mock Service for Extraction (Replace with real AI call later) ---
-def mock_extract_clos(text):
-    """
-    Simulates extracting CLOs from text. 
-    """
-    return [
-        {"code": "CLO-1", "text": "Analyze complex engineering problems.", "bloom": "C4"},
-        {"code": "CLO-2", "text": "Design solutions for specific requirements.", "bloom": "C6"},
-        {"code": "CLO-3", "text": "Apply ethical principles in engineering practice.", "bloom": "A3"},
-    ]
 
 # --- Helper to get Mock User if not logged in ---
 def get_user_or_mock(request):
@@ -28,7 +25,7 @@ def get_user_or_mock(request):
     return User.objects.first()
 
 class CourseCreateView(generics.CreateAPIView):
-    permission_classes = [AllowAny] # Changed for easier testing
+    permission_classes = [AllowAny]
     serializer_class = CourseSerializer
     queryset = Course.objects.all()
 
@@ -48,7 +45,8 @@ class EnrollSelfView(APIView):
     def post(self, request, course_id):
         course = get_object_or_404(Course, id=course_id)
         user = get_user_or_mock(request)
-        if not user: return Response({"error": "No user found"}, status=400)
+        if not user: 
+            return Response({"error": "No user found"}, status=400)
 
         role = request.data.get("role", "student")
         CourseEnrollment.objects.get_or_create(course=course, user=user, role=role)
@@ -57,7 +55,7 @@ class EnrollSelfView(APIView):
 
 class UploadOutlineView(APIView):
     """
-    Uploads outline, extracts text, and generates CLOs.
+    Uploads outline, extracts text, and generates CLOs using REAL logic.
     """
     permission_classes = [AllowAny]
 
@@ -72,7 +70,7 @@ class UploadOutlineView(APIView):
         # 1. Save Outline
         outline = CourseOutline.objects.create(course=course, file=file_obj, uploaded_by=user)
 
-        # 2. Extract Text
+        # 2. Extract Text from PDF/Docx
         text = ""
         try:
             name = file_obj.name.lower()
@@ -81,23 +79,43 @@ class UploadOutlineView(APIView):
             elif name.endswith('.docx'):
                 text = extract_text_from_docx_fileobj(outline.file)
             
-            outline.extracted_text = text[:100000] # Save first 100k chars
+            outline.extracted_text = text[:200000] 
             outline.save()
         except Exception as e:
             print(f"Extraction error: {e}")
+            return Response({
+                "message": "Outline uploaded but text extraction failed", 
+                "error": str(e)
+            }, status=200)
 
-        # 3. Generate CLOs (Using Mock Service)
-        # In the future, pass 'text' to your AI model here
-        clos_data = mock_extract_clos(text)
+        # ✅ 3. Generate CLOs using REAL FUNCTION
+        clos_data = extract_clos_from_text(text)
 
         # 4. Save CLOs to DB
         saved_clos = []
+        
+        # Optional: Uncomment if you want to clear old CLOs when uploading a new outline
+        # CLO.objects.filter(course=course).delete()
+
         for item in clos_data:
-            clo, _ = CLO.objects.get_or_create(
+            # Provide defaults/fallbacks
+            code = item.get('code') or f"CLO-{len(saved_clos)+1}"
+            bloom = item.get('bloom')
+            
+            clo, created = CLO.objects.get_or_create(
                 course=course,
-                code=item['code'],
-                defaults={'text': item['text'], 'bloom_level': item['bloom']}
+                code=code,
+                defaults={
+                    'text': item.get('text', ''), 
+                    'bloom_level': bloom
+                }
             )
+            
+            # If CLO existed but had no bloom level, update it
+            if not created and bloom and not clo.bloom_level:
+                clo.bloom_level = bloom
+                clo.save()
+                
             saved_clos.append(clo)
 
         return Response({
@@ -114,7 +132,6 @@ class ListCourseCLOsView(generics.ListAPIView):
         course_id = self.kwargs.get("course_id")
         return CLO.objects.filter(course__id=course_id).order_by("code")
 
-# ✅ NEW VIEW: Edit/Delete CLOs
 class CLOUpdateView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
     serializer_class = CLOSerializer

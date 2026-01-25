@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'users',
     'assessment_creation',
     'course_management',
+    'assessment_marking',
 ]
 
 MIDDLEWARE = [
