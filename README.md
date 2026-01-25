@@ -110,5 +110,3 @@ If you are assigned a new feature, follow these steps to keep the structure clea
 3. Add `'assessment_marking',` to `INSTALLED_APPS` in `obe_assess/settings.py`.
 
 ---
-
-**Would you like me to show you how to move her existing "Assessment Marking" files into this new app structure without breaking the code?**
