@@ -1,7 +1,6 @@
-# llm_service/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import requests
 import json
 import random
@@ -10,25 +9,10 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI(title="LLM Service with Gemma 3 (Ollama)")
 
-# -------------------------
-# 1. Input Models
-# -------------------------
+# ==========================================
+# 1. SHARED HELPERS
+# ==========================================
 
-class QuestionConfig(BaseModel):
-    id: int
-    clo: str
-    bloom_level: str
-    difficulty: str
-    weightage: str
-
-class LLMRequest(BaseModel):
-    text: str
-    assessment_type: str
-    questions_config: List[QuestionConfig]
-
-# -------------------------
-# 2. Helper: Robust JSON Extractor
-# -------------------------
 def clean_and_extract_json(raw_text):
     """
     Attempts to extract valid JSON from the LLM's raw output.
@@ -49,17 +33,61 @@ def clean_and_extract_json(raw_text):
     # 3. If no markers found, return raw text and hope it's clean
     return raw_text
 
-# -------------------------
-# 3. Generate Assessment Route
-# -------------------------
+def call_ollama(prompt, model="gemma3:1b", options=None):
+    """
+    Centralized function to call the local Ollama instance.
+    """
+    if options is None:
+        options = {
+            "temperature": 0.2,
+            "num_ctx": 8192,
+            "num_predict": 3000,
+            "top_k": 40,
+            "top_p": 0.9
+        }
+
+    print(f"--> Sending request to Ollama ({model})...")
+    
+    try:
+        resp = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": model, 
+                "prompt": prompt, 
+                "stream": False,
+                "options": options
+            },
+            timeout=180 # Extended timeout for long generations
+        )
+        resp.raise_for_status()
+        return resp.json().get("response", "").strip()
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Ollama Connection Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Ollama Error: {str(e)}")
+
+# ==========================================
+# 2. FEATURE: ASSESSMENT GENERATION
+# ==========================================
+
+class QuestionConfig(BaseModel):
+    id: int
+    clo: str
+    bloom_level: str
+    difficulty: str
+    weightage: str
+
+class LLMRequest(BaseModel):
+    text: str
+    assessment_type: str
+    questions_config: List[QuestionConfig]
+
 @app.post("/generate")
 def generate_assessment(req: LLMRequest):
     """
-    Generates assessment questions where each question follows 
-    specific CLO, Bloom, and Difficulty requirements.
+    Generates assessment questions based on text context and configuration.
     """
-
-    # 1️⃣ Build requirements string
+    
+    # 1. Build requirements string
     requirements_list = ""
     for q in req.questions_config:
         requirements_list += (
@@ -71,73 +99,43 @@ def generate_assessment(req: LLMRequest):
 
     num_questions = len(req.questions_config)
 
-    # 2️⃣ Prepare the Prompt (Stricter JSON enforcement)
+    # 2. Prepare the Prompt
     prompt = f"""
-    You are an expert academic AI. Generate an assessment based on the provided text.
-    
-    CONTEXT MATERIAL:
-    {req.text[:30000]}... (truncated)
+You are an expert academic AI. Generate an assessment based on the provided text.
 
-    TASK:
-    Generate exactly {num_questions} questions for a {req.assessment_type}.
-    
-    CONSTRAINTS:
-    {requirements_list}
+CONTEXT MATERIAL:
+{req.text[:30000]}... (truncated)
 
-    OUTPUT FORMAT:
-    Return ONLY valid JSON. Do not include markdown formatting, preambles, or explanations.
-    The output must match this schema exactly:
-    {{
-        "questions": [
-            {{
-                "id": 1,
-                "question": "The question text...",
-                "answer": "The model answer...",
-                "marks": "5",
-                "rubric": {{
-                    "Excellent": "Criteria for full marks...",
-                    "Average": "Criteria for partial marks...",
-                    "Poor": "Criteria for low marks..."
-                }}
+TASK:
+Generate exactly {num_questions} questions for a {req.assessment_type}.
+
+CONSTRAINTS:
+{requirements_list}
+
+OUTPUT FORMAT:
+Return ONLY valid JSON. Do not include markdown formatting, preambles, or explanations.
+The output must match this schema exactly:
+{{
+    "questions": [
+        {{
+            "id": 1,
+            "question": "The question text...",
+            "answer": "The model answer...",
+            "marks": "5",
+            "rubric": {{
+                "Excellent": "Criteria for full marks...",
+                "Average": "Criteria for partial marks...",
+                "Poor": "Criteria for low marks..."
             }}
-        ]
-    }}
-    """
+        }}
+    ]
+}}
+"""
 
-    # 3️⃣ Call local Ollama
-    print(f"--> Sending request to Ollama for {num_questions} questions...")
-    
-    try:
-        ollama_response = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": "gemma3:1b",  # Make sure this matches your installed model (e.g., gemma2:2b)
-                "prompt": prompt, 
-                "stream": False,
-                "options": {
-                    "temperature": 0.2, # Lower temperature for more structured output
-                    "num_ctx": 8192 ,
-                    "num_predict": 3000,   # NEW: Forces longer output (prevents stopping at Q1)
-                    "top_k": 40,
-                    "top_p": 0.9
-                }
-            },
-            timeout=5000
-        )
-        ollama_response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Ollama Connection Error: {e}")
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Failed to reach Ollama: {str(e)}"}
-        )
+    # 3. Call Ollama
+    result_text = call_ollama(prompt)
 
-    result_text = ollama_response.json().get("response", "").strip()
-    
-    # Debug: Print raw output to console (helps with troubleshooting)
-    # print(f"DEBUG RAW LLM OUTPUT:\n{result_text[:200]}...") 
-
-    # 4️⃣ Clean and Extract JSON
+    # 4. Clean and Extract JSON
     clean_json_str = clean_and_extract_json(result_text)
     
     questions_data = []
@@ -146,9 +144,10 @@ def generate_assessment(req: LLMRequest):
         questions_data = parsed.get("questions", [])
     except json.JSONDecodeError:
         print("❌ JSON Decode Error. The LLM output was not valid JSON.")
+        # We return empty list here, fallback logic below handles it
         questions_data = []
 
-    # 5️⃣ Validation & Fallback (Merge with Config)
+    # 5. Validation & Fallback (Merge with Config)
     final_questions = []
     
     for i, config in enumerate(req.questions_config):
@@ -167,7 +166,7 @@ def generate_assessment(req: LLMRequest):
             "difficulty": config.difficulty
         }
 
-        # Fallback if specific fields are missing in LLM output
+        # Fallback if specific fields are missing
         if "question" not in q_data:
             q_data["question"] = f"Error: Could not generate question {config.id}."
             q_data["answer"] = "N/A"
@@ -175,7 +174,7 @@ def generate_assessment(req: LLMRequest):
 
         final_questions.append(q_data)
 
-    # 6️⃣ Return Structured Response
+    # 6. Return Structured Response
     return JSONResponse(
         content={
             "job_id": f"job_{random.randint(1000,9999)}",
@@ -188,3 +187,77 @@ def generate_assessment(req: LLMRequest):
         },
         status_code=200
     )
+
+
+# ==========================================
+# 3. FEATURE: ASSESSMENT MARKING (NEW)
+# ==========================================
+
+class GradingCriterion(BaseModel):
+    criterion: str
+    marks: int
+
+class MarkingRequest(BaseModel):
+    question_text: str
+    student_answer: str
+    max_marks: int
+    criteria: List[GradingCriterion] = []
+
+@app.post("/mark")
+def mark_question(req: MarkingRequest):
+    """
+    Marks a single question based on criteria and student answer.
+    """
+    
+    # 1. Build Criteria Text
+    criteria_text = "\n".join([f"- {c.criterion} ({c.marks} marks)" for c in req.criteria]) \
+        if req.criteria else "NO SPECIFIC CRITERIA. Use general academic judgement based on the question."
+
+    # 2. Build Prompt
+    prompt = f"""
+You are a fair and objective academic assessor. Your task is to accurately mark the student's submission against the provided criteria.
+
+**STRICT RULE:** Respond with a single, complete JSON object. DO NOT include any conversational text or markdown outside the JSON.
+
+---
+### ASSESSMENT DETAILS
+**Question:** {req.question_text}
+**Student Answer:** {req.student_answer}
+
+**Marking Criteria (Total: {req.max_marks} Marks):**
+{criteria_text}
+---
+
+Calculate the 'marks_awarded' out of 'max_marks'. Provide specific, actionable 'feedback' justifying the mark.
+
+**REQUIRED JSON OUTPUT FORMAT:**
+{{
+    "marks_awarded": 0,
+    "max_marks": {req.max_marks},
+    "feedback": "Detailed justification..."
+}}
+"""
+
+    # 3. Call Ollama
+    raw_response = call_ollama(prompt)
+
+    # 4. Parse JSON
+    cleaned_json = clean_and_extract_json(raw_response)
+    
+    try:
+        result_data = json.loads(cleaned_json)
+        
+        # Validate and return
+        return {
+            "marks_awarded": int(result_data.get("marks_awarded", 0)),
+            "max_marks": int(result_data.get("max_marks", req.max_marks)),
+            "feedback": str(result_data.get("feedback", "No feedback provided."))
+        }
+    except (json.JSONDecodeError, ValueError):
+        # Fallback if AI fails to give valid JSON
+        print(f"❌ JSON Error in Marking. Raw output: {raw_response[:100]}...")
+        return {
+            "marks_awarded": 0,
+            "max_marks": req.max_marks,
+            "feedback": "Error: AI response was not valid JSON. Manual review recommended."
+        }

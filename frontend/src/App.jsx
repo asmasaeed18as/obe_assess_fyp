@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import DashboardLayout from "./pages/Dashboard"; 
 import DashboardHome from "./pages/DashboardHome"; 
 import AssessmentCreate from "./pages/AssessmentCreate";
+import AssessmentGrading from "./pages/AssessmentGrading";
 import CourseDetail from "./pages/CourseDetail";
 import CourseEnroll from "./pages/CourseEnroll"; 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -38,7 +39,8 @@ function App() {
 
               {/* General Route (Fallback if accessing directly without course context) */}
               <Route path="create-assessment" element={<AssessmentCreate />} />
-              
+              {/* Grading Page */}
+              <Route path="grading" element={<AssessmentGrading />} />
               {/* Course Management Routes */}
               <Route path="courses/:id" element={<CourseDetail />} />
               <Route path="enroll-course" element={<CourseEnroll />} />
@@ -54,7 +56,7 @@ function App() {
           </Route>
 
           {/* Redirect root to dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
           
           {/* Fallback */}
           <Route path="*" element={<div>Page not found</div>} />
