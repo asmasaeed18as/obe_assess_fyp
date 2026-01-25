@@ -1,4 +1,4 @@
-To help  teammate understand how  module fits into the existing ecosystem, I have integrated  setup instructions with the contribution rules. This creates a single "Source of Truth" document for your repository.
+To understand how  module fits into the existing ecosystem, I have integrated  setup instructions with the contribution rules. This creates a single "Source of Truth" document for  repository.
 
 
 ---
