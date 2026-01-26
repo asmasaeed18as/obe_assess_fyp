@@ -23,7 +23,8 @@ urlpatterns = [
     path("api/users/", include("users.urls")),
     path("api/assessment/", include("assessment_creation.urls")),
     path("api/courses/", include("course_management.urls")),
-
+    # ✅ NEW: Connect the Grading App here
+    path("api/grading/", include("assessment_marking.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
