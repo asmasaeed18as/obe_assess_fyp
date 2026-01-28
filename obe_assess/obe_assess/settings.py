@@ -84,11 +84,11 @@ WSGI_APPLICATION = 'obe_assess.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'obe_assess_db',
+        'NAME': 'obe_db',
         'USER': 'obe_user',
-        'PASSWORD': 'as416741',
+        'PASSWORD': 'aima',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5433',
     }
 }
 AUTH_USER_MODEL = 'users.User'  # point to our custom user model

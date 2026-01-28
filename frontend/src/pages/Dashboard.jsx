@@ -1,21 +1,28 @@
 import React, { useContext } from "react";
-import { NavLink, Outlet } from "react-router-dom"; 
+import { NavLink, Outlet, useNavigate } from "react-router-dom"; 
 import AuthContext from "../contexts/AuthContext";
 import "../styles/Dashboard.css";
 
 export default function DashboardLayout() {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   if (!user) return <div>Loading...</div>;
 
+  const handleLogout = () => {
+    const confirmLogout = window.confirm("Are you sure you want to logout?");
+    if (confirmLogout) {
+      logout();
+      navigate("/login");
+    }
+  };
+
   return (
     <div className="dashboard">
-      {/* === Fixed Sidebar === */}
       <aside className="sidebar">
         <h2 className="logo">OBE-Assess</h2>
 
         <nav className="sidebar-nav">
-          {/* 'end' prop ensures 'Home' is only active at /dashboard exactly */}
           <NavLink 
             to="/dashboard" 
             end
@@ -52,11 +59,32 @@ export default function DashboardLayout() {
             Settings
           </NavLink>
         </nav>
+
+        {/* Profile & Logout Section */}
+        <div className="sidebar-footer">
+          <div className="user-profile-small">
+            <div className="user-avatar-mini">
+              {user.name ? user.name.charAt(0).toUpperCase() : "A"}
+            </div>
+            <div className="user-details-mini">
+              <span className="user-name-mini">{user.name}</span>
+              <span className="user-email-mini">{user.email}</span>
+            </div>
+          </div>
+          
+
+          
+
+
+
+
+          <button onClick={handleLogout} className="logout-btn">
+            Logout
+          </button>
+        </div>
       </aside>
 
-      {/* === Dynamic Main Content Area === */}
       <main className="dashboard-main">
-        {/* The Outlet renders the child page (Home, Detail, Enroll, etc.) */}
         <Outlet />
       </main>
     </div>
