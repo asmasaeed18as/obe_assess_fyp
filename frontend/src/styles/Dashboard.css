@@ -683,3 +683,79 @@
 .bloom-badge.c { background: #fff7ed; color: #c2410c; border-color:#ffedd5; } /* Orange */
 .bloom-badge.p { background: #fdf4ff; color: #86198f; border-color:#f0abfc; } /* Purple */
 .bloom-badge.a { background: #eff6ff; color: #1e40af; border-color:#bfdbfe; } /* Blue */
+
+
+
+/* =======================================
+   SIDEBAR FOOTER - HORIZONTAL ALIGNMENT FIX*/
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center; /* Vertical center alignment */
+  justify-content: space-between; /* Pushes profile left and button right */
+  gap: 10px;
+}
+
+.user-profile-small {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0; /* Prevents flex children from overflowing */
+}
+
+.user-avatar-mini {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.user-details-mini {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Important for long emails */
+}
+
+.user-name-mini {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email-mini {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logout-btn {
+  padding: 8px;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 1px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background: var(--primary);
+  color: white;
+}

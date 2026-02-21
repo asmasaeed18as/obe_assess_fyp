@@ -1,10 +1,11 @@
 import React, { useContext } from "react";
-import { NavLink, Outlet } from "react-router-dom"; 
+import { NavLink, Outlet, useNavigate } from "react-router-dom"; 
 import AuthContext from "../contexts/AuthContext";
 import "../styles/Dashboard.css";
 
 export default function DashboardLayout() {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   if (!user) return <div>Loading...</div>;
 
@@ -13,7 +14,6 @@ export default function DashboardLayout() {
 
   return (
     <div className="dashboard">
-      {/* === Fixed Sidebar === */}
       <aside className="sidebar">
         <h2 className="logo">OBE-Assess</h2>
 

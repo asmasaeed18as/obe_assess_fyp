@@ -323,3 +323,88 @@
   flex-direction: column;
   gap: 20px;
 }
+
+.chart-wrapper {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 10px;
+}
+
+/* Ensuring text inside cards doesn't look squashed */
+.card-section h2 {
+  font-size: 1.3rem;
+  color: #222;
+}
+
+.card-section p {
+  margin: 2px 0;
+}
+
+/* Specific overrides for the Settings page */
+.settings-inline-input {
+  border: none !important;
+  background: transparent !important; /* This removes the dark blocks */
+  text-align: right;
+  font-weight: 500;
+  color: #101828;
+  outline: none;
+  width: 50%;
+  font-size: 1rem;
+  padding: 0;
+  margin: 0;
+}
+
+.settings-inline-input:focus {
+  color: #0974b6; /* Highlighting the text you are editing */
+  box-shadow: none !important;
+}
+
+.settings-save-btn {
+  background: #ffffff;
+  border: 1px solid #D0D5DD;
+  border-radius: 30px;
+  padding: 12px 60px;
+  color: #D0D5DD; /* Light grey text like your screenshot */
+  font-weight: 600;
+  cursor: not-allowed;
+  transition: all 0.2s;
+}
+
+/* Optional: Make the button look "active" if you want to test it */
+.settings-save-btn:active {
+    background: #f9fafb;
+}
+
+/* Removes all bulky global input styles for the settings page */
+.clean-inline-input {
+  border: none !important;
+  background: transparent !important;
+  text-align: right;
+  font-weight: 500;
+  color: #101828;
+  outline: none;
+  width: 60%;
+  font-size: 1rem;
+  padding: 0 !important;
+  height: auto !important;
+  box-shadow: none !important;
+}
+
+/* The light-grey pill button from your screenshot */
+.settings-pill-btn {
+  background: #ffffff;
+  border: 1px solid #D0D5DD;
+  border-radius: 40px;
+  padding: 12px 80px;
+  color: #98A2B3; /* Light grey text */
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-pill-btn:hover {
+  background: #f9fafb;
+  border-color: #b0b5bd;
+}

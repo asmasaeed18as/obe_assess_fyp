@@ -110,3 +110,10 @@ If you are assigned a new feature, follow these steps to keep the structure clea
 3. Add `'assessment_marking',` to `INSTALLED_APPS` in `obe_assess/settings.py`.
 
 ---
+
+**to create supersuser to access the backend admin panel and database**
+You need a superuser to access the Django Admin panel. Run this in your terminal:
+
+PowerShell
+
+python manage.py createsuperuser

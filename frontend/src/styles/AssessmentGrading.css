@@ -84,3 +84,14 @@
   font-weight: 800;
   letter-spacing: 0.5px;
 }
+
+/* Ensure question badges don't float at page corner */
+.question-card {
+  position: relative;
+}
+
+.question-card .q-badge {
+  position: static;
+  display: inline-block;
+  margin-right: 8px;
+}

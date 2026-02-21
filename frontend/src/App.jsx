@@ -11,6 +11,8 @@ import DashboardLayout from "./pages/Dashboard";
 import DashboardHome from "./pages/DashboardHome"; 
 import AssessmentCreate from "./pages/AssessmentCreate";
 import AssessmentGrading from "./pages/AssessmentGrading";
+import AssessmentAnalytics from "./pages/AssessmentAnalytics";
+import Settings from './pages/Settings';
 import CourseDetail from "./pages/CourseDetail";
 import CourseEnroll from "./pages/CourseEnroll"; 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -47,12 +49,12 @@ function App() {
               
               {/* Placeholders for future routes */}
               <Route path="grading" element={<div>Grading Page Placeholder</div>} />
-              <Route path="analytics" element={<div>Analytics Page Placeholder</div>} />
-              <Route path="settings" element={<div>Settings Page Placeholder</div>} />
+              <Route path="analytics" element={<AssessmentAnalytics />} />
+              <Route path="settings" element={<Settings />} />
               
             </Route>
 
-            <Route path="/profile" element={<Profile />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
 
           {/* Redirect root to dashboard */}
