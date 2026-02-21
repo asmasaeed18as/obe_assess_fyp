@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any
 import requests
 import json
 import random
+
 import re
 from fastapi.responses import JSONResponse
 
@@ -228,14 +229,14 @@ You are a fair and objective academic assessor. Your task is to accurately mark 
 {criteria_text}
 ---
 
-Calculate the 'marks_awarded' out of 'max_marks'. Provide specific, actionable 'feedback' justifying the mark.
-
 **REQUIRED JSON OUTPUT FORMAT:**
 {{
-    "marks_awarded": 0,
+    "marks_awarded": <REPLACE_WITH_CALCULATED_INTEGER>,
     "max_marks": {req.max_marks},
-    "feedback": "Detailed justification..."
+    "feedback": "Detailed justification based on criteria..."
 }}
+
+STRICT: Ensure 'marks_awarded' is an integer between 0 and {req.max_marks}.
 """
 
     # 3. Call Ollama

@@ -1,57 +1,78 @@
 import re
 
+def extract_student_info(text):
+    """Extracts Name and CMS ID from the first part of the document."""
+    header = text[:1000]
+    
+    # CMS ID: More flexible pattern for IDs (supports spaces, colons, or just the number)
+    cms_id = "Not Found"
+    cms_match = re.search(r"(?:CMS\s*ID|CMS|ID|Reg\s*(?:No|#)?)\s*[:\-]?\s*([A-Z0-9\-]+)", header, re.I)
+    if cms_match:
+        cms_id = cms_match.group(1).strip()
+
+    # Name: Updated to catch names even if they aren't perfectly capitalized
+    name = "Unknown"
+    name_match = re.search(r"(?:Name|Student\s*Name)\s*[:\-]?\s*([A-Za-z\s]{3,50})", header, re.I)
+    if name_match:
+        name = name_match.group(1).strip().split('\n')[0] # Ensure we only get the first line
+        # Remove trailing identifiers if they appear on the same line (e.g., "CMS ID")
+        name = re.split(r"\bCMS\b|\bID\b|\bReg\b", name, maxsplit=1, flags=re.I)[0].strip()
+        
+    return {"student_name": name, "cms_id": cms_id}
+
 def extract_marks_from_rubric(rubric_text):
     criteria = []
+    # Split into lines and ignore empty ones
     lines = [ln.strip() for ln in rubric_text.splitlines() if ln.strip()]
+    
     for line in lines:
-        # Patter: Q1 - Accuracy: 3 marks
-        m = re.search(r"(Q(?:uestion)?\s*\d+|\b\d+\b)?\s*[:,.\-]?\s*([A-Za-z0-9 \-()\/&]+?)\s*(?:\(|:|\-)?\s*(\d+)\s*marks?", line, flags=re.IGNORECASE)
+        # Pattern 1: Look for Question ID, Criterion, and a Number at the end
+        # Matches: "Q1 - Accuracy: 10 marks" or "1. Content 5"
+        m = re.search(r"(?:Q(?:uestion)?\s*(\d+))?[:.\-]?\s*(.*?)\s*[:\-\(\[]?\s*(\d+)\s*(?:marks?|pts|points)?[\)\]]?$", line, re.I)
+        
         if m:
-            qid_raw = m.group(1)
+            qid_num = m.group(1)
             criterion = m.group(2).strip()
             marks = int(m.group(3))
-            qid = None
-            if qid_raw:
-                qid_m = re.search(r"\d+", qid_raw)
-                if qid_m:
-                    qid = f"Q{qid_m.group(0)}"
+            
+            # Clean up criterion name (remove trailing punctuation)
+            criterion = re.sub(r"[:\-\s]+$", "", criterion)
+            
+            qid = f"Q{qid_num}" if qid_num else None
             criteria.append({"qid": qid, "criterion": criterion, "marks": marks})
-            continue
-        
-        # Pattern: Accuracy - 3 marks
-        m2 = re.search(r"(.+?)\s*[–\-:]\s*(\d+)\s*marks?", line, flags=re.IGNORECASE)
-        if m2:
-            criteria.append({"qid": None, "criterion": m2.group(1).strip(), "marks": int(m2.group(2))})
 
     return criteria
 
 def extract_total_marks(criteria_list):
+    # Check if 'Total' is explicitly defined
     for c in criteria_list:
         if c["criterion"].lower() == "total":
             return c["marks"]
-    return sum(c["marks"] for c in criteria_list if c.get("marks"))
+    # No explicit total found
+    return 0
 
 def map_criteria_to_questions(criteria_list, questions):
     qids = list(questions.keys())
     mapping = {qid: [] for qid in qids}
     
-    # 1. Direct Mapping
-    direct_found = any(c.get("qid") for c in criteria_list)
-    if direct_found:
-        for c in criteria_list:
-            if c.get("qid") and c["qid"] in mapping:
+    # Filter out any "Total" rows from the mapping
+    actual_criteria = [c for c in criteria_list if c["criterion"].lower() != "total"]
+
+    # 1. Direct QID Mapping (If Q1 is in the rubric)
+    direct_mapping_exists = any(c.get("qid") for c in actual_criteria)
+    if direct_mapping_exists:
+        for c in actual_criteria:
+            if c.get("qid") in mapping:
                 mapping[c["qid"]].append(c)
-            else:
-                for q in qids: mapping[q].append(c)
         return mapping
 
-    # 2. 1-to-1 Mapping if counts match
-    if len(criteria_list) == len(qids) and len(qids) > 0:
-        for i, q in enumerate(qids):
-            mapping[q].append(criteria_list[i])
+    # 2. Sequential Mapping (If number of rubric lines = number of questions)
+    if len(actual_criteria) == len(qids):
+        for i, qid in enumerate(qids):
+            mapping[qid].append(actual_criteria[i])
         return mapping
 
-    # 3. Fallback: Assign all criteria to all questions
-    for q in qids:
-        mapping[q] = list(criteria_list)
+    # 3. Global Mapping (Assign all criteria to every question)
+    for qid in qids:
+        mapping[qid] = actual_criteria
     return mapping

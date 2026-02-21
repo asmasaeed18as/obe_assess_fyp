@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 from .models import GradedSubmission
 from .serializers import GradedSubmissionSerializer
 from .grading_logic.marking_client import mark_assessment_logic # Import logic
@@ -36,3 +37,11 @@ class GradeAssessmentView(APIView):
                 return Response({"status": "error", "details": str(e)}, status=500)
         
         return Response(serializer.errors, status=400)
+
+
+class GradedSubmissionDetailView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, submission_id, *args, **kwargs):
+        submission = get_object_or_404(GradedSubmission, id=submission_id)
+        return Response(GradedSubmissionSerializer(submission).data)
