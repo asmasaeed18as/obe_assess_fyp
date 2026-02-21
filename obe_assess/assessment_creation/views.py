@@ -1,10 +1,10 @@
 # assessment_creation/views.py
 import requests, json
 import zipfile
+from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.http import FileResponse, Http404
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -31,13 +31,17 @@ class UploadMaterialAndGenerateAssessment(APIView):
         # 1. Extract Files and Data
         uploaded_file = request.FILES.get("file")
         outline_file = request.FILES.get("outline")
+        
+        # ✅ NEW: Get Topic Input from frontend
+        topic_input = request.data.get("topic_input", "").strip()
+        
         assessment_type = request.data.get("assessment_type", "Assignment")
         config_str = request.data.get("questions_config")
-        course_id = request.data.get("course_id")  # ✅ Get Course ID from frontend
+        course_id = request.data.get("course_id") 
 
-        # 2. Validation
-        if not uploaded_file:
-            return Response({"error": "Material file is required"}, status=status.HTTP_400_BAD_REQUEST)
+        # 2. Smart Validation: Require File OR Topic
+        if not uploaded_file and not topic_input:
+            return Response({"error": "Please upload a material file OR provide a topic description."}, status=status.HTTP_400_BAD_REQUEST)
         
         if not config_str:
             return Response({"error": "Questions configuration is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -54,23 +58,39 @@ class UploadMaterialAndGenerateAssessment(APIView):
         except json.JSONDecodeError:
             return Response({"error": "Invalid JSON format for questions_config"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 3. Save Lecture Material
-        lecture = LectureMaterial.objects.create(title=uploaded_file.name, file=uploaded_file)
+        # 3. Determine Context Content (Topic vs File)
+        text_content = ""
+        lecture = None
 
-        # 4. Extract Text
-        try:
-            text_content = extract_text_from_pdf_filefield(lecture.file)
-            if outline_file:
+        if topic_input:
+            # ✅ OPTION A: TOPIC MODE
+            text_content = f"TOPIC/INSTRUCTIONS PROVIDED BY INSTRUCTOR:\n{topic_input}"
+            # Create a placeholder lecture record to track this generation
+            lecture = LectureMaterial.objects.create(
+                title=f"Topic: {topic_input[:40]}...", 
+                extracted_text=text_content
+            )
+        else:
+            # ✅ OPTION B: FILE MODE
+            lecture = LectureMaterial.objects.create(title=uploaded_file.name, file=uploaded_file)
+            try:
+                text_content = extract_text_from_pdf_filefield(lecture.file)
+                lecture.extracted_text = text_content[:100000]
+                lecture.save()
+            except Exception as e:
+                return Response({"error": f"Failed to extract PDF text: {str(e)}"}, status=500)
+
+        # 4. Append Course Outline (Optional Context)
+        if outline_file:
+            try:
                 outline_text = extract_text_from_pdf_filefield(outline_file)
-                text_content = f"=== COURSE OUTLINE ===\n{outline_text}\n\n=== LECTURE MATERIAL ===\n{text_content}"
-            lecture.extracted_text = text_content[:100000]
-            lecture.save()
-        except Exception as e:
-            return Response({"error": f"Failed to extract PDF text: {str(e)}"}, status=500)
+                text_content = f"=== COURSE OUTLINE ===\n{outline_text}\n\n=== CONTENT ===\n{text_content}"
+            except Exception:
+                pass # Continue even if outline fails
 
         # 5. Call LLM Microservice
         payload = {
-            "text": text_content[:30000],
+            "text": text_content[:40000], # Truncate to avoid token limits
             "assessment_type": assessment_type,
             "questions_config": questions_config
         }
@@ -92,7 +112,7 @@ class UploadMaterialAndGenerateAssessment(APIView):
         clo_summary = ", ".join(sorted(list(set([q.get('clo', '') for q in questions_config if q.get('clo')]))))
         
         assessment = Assessment.objects.create(
-            course=course_obj,  # ✅ Link the assessment to the course
+            course=course_obj,
             material=lecture,
             assessment_type=assessment_type,
             questions_config=questions_config,
@@ -111,7 +131,6 @@ class UploadMaterialAndGenerateAssessment(APIView):
 
         serializer = AssessmentSerializer(assessment)
         return Response(serializer.data, status=201)
-
 
 # ==========================================
 # View for Downloading Single Format (Legacy)
@@ -176,3 +195,20 @@ class DownloadAssessmentZip(APIView):
         response = FileResponse(zip_buffer, content_type='application/zip')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
+
+
+# ==========================================
+# ✅ NEW: View to List Assessments for a Course
+# ==========================================
+class CourseAssessmentListView(generics.ListAPIView):
+    """
+    Returns a list of assessments for a specific course_id.
+    """
+    serializer_class = AssessmentSerializer
+    # Adjust permission based on your needs (AllowAny if testing without tokens)
+    permission_classes = [AllowAny] 
+
+    def get_queryset(self):
+        course_id = self.kwargs['course_id']
+        # Return assessments for this course, newest first
+        return Assessment.objects.filter(course_id=course_id).order_by('-created_at')

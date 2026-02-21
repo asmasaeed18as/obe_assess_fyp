@@ -8,6 +8,9 @@ export default function DashboardLayout() {
 
   if (!user) return <div>Loading...</div>;
 
+  const isInstructor = user.role === "instructor";
+  const isAdmin = user.role === "admin" || user.is_superuser;
+
   return (
     <div className="dashboard">
       {/* === Fixed Sidebar === */}
@@ -15,7 +18,7 @@ export default function DashboardLayout() {
         <h2 className="logo">OBE-Assess</h2>
 
         <nav className="sidebar-nav">
-          {/* 'end' prop ensures 'Home' is only active at /dashboard exactly */}
+          {/* Everyone sees Home */}
           <NavLink 
             to="/dashboard" 
             end
@@ -24,27 +27,36 @@ export default function DashboardLayout() {
             Home
           </NavLink>
           
-          <NavLink 
-            to="/dashboard/create-assessment" 
-            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-          >
-            Assessment Creation
-          </NavLink>
+          {/* INSTRUCTOR ONLY: Creation & Grading */}
+          {isInstructor && (
+            <>
+              <NavLink 
+                to="/dashboard/create-assessment" 
+                className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+              >
+                Create Assessment
+              </NavLink>
 
-          <NavLink 
-            to="/dashboard/grading" 
-            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-          >
-            Assessment Grading
-          </NavLink>
+              <NavLink 
+                to="/dashboard/grading" 
+                className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+              >
+                Grading
+              </NavLink>
+            </>
+          )}
 
-          <NavLink 
-            to="/dashboard/analytics" 
-            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-          >
-            Analytics
-          </NavLink>
+          {/* ADMIN ONLY: Analytics (or maybe everyone?) */}
+          {(isAdmin || isInstructor) && (
+            <NavLink 
+                to="/dashboard/analytics" 
+                className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+            >
+                Analytics
+            </NavLink>
+          )}
 
+          {/* Everyone sees Settings */}
           <NavLink 
             to="/dashboard/settings" 
             className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
@@ -52,11 +64,16 @@ export default function DashboardLayout() {
             Settings
           </NavLink>
         </nav>
+
+        {/* User Mini Profile at Bottom */}
+        <div className="sidebar-footer">
+            <small>{user.email}</small>
+            <div className="role-badge">{user.role}</div>
+        </div>
       </aside>
 
-      {/* === Dynamic Main Content Area === */}
+      {/* === Main Content === */}
       <main className="dashboard-main">
-        {/* The Outlet renders the child page (Home, Detail, Enroll, etc.) */}
         <Outlet />
       </main>
     </div>

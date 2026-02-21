@@ -1,33 +1,38 @@
-# course_management/urls.py
 from django.urls import path
 from .views import (
-    CourseCreateView, 
-    CourseListView, 
-    CourseDetailView, 
-    EnrollSelfView, 
-    UploadOutlineView, 
+    # Admin / Hierarchy
+    LMSHierarchyView,
+    ResourceListView,
+    SectionCreateView,
+    CourseCreateView,
+    # Student / Enrollment
+    JoinSectionView,
+    MyEnrollmentsView,
+    
+    # Content / CLOs
+    CourseListView,
+    CourseDetailView, # ✅ IMPORT THE NEW VIEW
+    UploadOutlineView,
     ListCourseCLOsView,
     CLOUpdateView
 )
 
 urlpatterns = [
-    # List all courses (GET)
-    path("", CourseListView.as_view(), name="course-list"),
+    # --- Admin Dashboard Routes ---
+    path("hierarchy/", LMSHierarchyView.as_view(), name="lms-hierarchy"), # Tree Data
+    path("resources/", ResourceListView.as_view(), name="lms-resources"), # Dropdowns
+    path("sections/create/", SectionCreateView.as_view(), name="section-create"), # Register Teacher
+    path('courses/create/', CourseCreateView.as_view(), name='course-create-admin'),
+    # --- Student Routes ---
+    path("join/", JoinSectionView.as_view(), name="student-join"), # Join via Code
+    path("my-enrollments/", MyEnrollmentsView.as_view(), name="my-enrollments"), # Dashboard List
     
-    # Create course (POST) - Admin/QA only
-    path("create/", CourseCreateView.as_view(), name="course-create"),
-    
-    # Course Detail (GET)
-    path("<int:pk>/", CourseDetailView.as_view(), name="course-detail"),
-    
-    # Enroll (POST)
-    path("<int:course_id>/enroll/", EnrollSelfView.as_view(), name="enroll-self"),
-    
-    # Upload Outline (POST)
-    path("<int:course_id>/upload-outline/", UploadOutlineView.as_view(), name="upload-outline"),
-    
-    # Get CLOs (GET)
-    path("<int:course_id>/clos/", ListCourseCLOsView.as_view(), name="course-clos"),
-    # ✅ NEW: Route for Editing a CLO (uses UUID because your model uses uuid)
+    # --- Generic Course & Content Routes ---
+    path("courses/", CourseListView.as_view(), name="course-list"), # Catalog
+    # ✅ ADD THIS NEW PATH RIGHT HERE:
+    path("courses/<int:pk>/", CourseDetailView.as_view(), name="course-detail"),
+    # CLO & Outline (Linked to Generic Course ID)
+    path("courses/<int:course_id>/upload-outline/", UploadOutlineView.as_view(), name="upload-outline"),
+    path("courses/<int:course_id>/clos/", ListCourseCLOsView.as_view(), name="course-clos"),
     path("clo/<uuid:pk>/", CLOUpdateView.as_view(), name="clo-update"),
 ]

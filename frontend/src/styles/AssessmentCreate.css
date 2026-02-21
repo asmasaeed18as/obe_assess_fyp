@@ -1,12 +1,12 @@
 /* === Main Container === */
 .assessment-container {
-  /* min-height: 100vh; */
   background: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 40px 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
 }
 
 /* === Title === */
@@ -24,10 +24,10 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  max-width: 600px; /* Slightly wider for the grid inputs */
+  max-width: 600px;
 }
 
-/* === Cards === */
+/* === General Card Styles === */
 .card-section {
   border-radius: 12px;
   padding: 20px;
@@ -36,6 +36,7 @@
   gap: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease;
+  background-color: #fff; /* Default */
 }
 
 .section-label {
@@ -47,6 +48,26 @@
   letter-spacing: 0.5px;
 }
 
+/* === Course Selection Specifics === */
+.course-select-card {
+  border-left: 4px solid #5b5fc7;
+}
+
+.course-badge-card {
+  background: #e0e7ff;
+  border-left: 4px solid #5b5fc7;
+}
+
+.course-badge-label {
+  color: #3730a3;
+}
+
+.course-badge-title {
+  margin: 10px 0 0 0;
+  color: #312e81;
+}
+
+/* === Color Cards === */
 .card-purple { background-color: #ebe7ff; border: 1px solid #dcd6f7; }
 .card-green { background-color: #e9f7e7; border: 1px solid #d4edda; }
 .card-peach { background-color: #fff2e6; border: 1px solid #ffe0b2; }
@@ -74,10 +95,15 @@
   border-radius: 12px;
 }
 
+/* Header inside question card (Badge + Dropdown) */
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
 .q-badge {
-  position: absolute;
-  top: 0;
-  left: 0;
   background-color: #0974b6;
   color: white;
   padding: 4px 14px;
@@ -86,6 +112,22 @@
   font-size: 0.85rem;
   font-weight: bold;
   box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+  /* Positioned absolutely within the card if needed, 
+     but using flex header is often cleaner. 
+     Keeping absolute here to match your design. */
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.type-select-dropdown {
+  width: auto;
+  padding: 5px;
+  font-size: 0.85rem;
+  height: 35px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  outline: none;
 }
 
 .grid-row {
@@ -112,41 +154,75 @@
   box-shadow: 0 0 0 3px rgba(9, 116, 182, 0.1);
 }
 
-/* === Upload Section === */
-.upload-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #ffffff;
-  padding: 10px 15px;
-  border-radius: 10px;
-  border: 1px dashed #1e7d20;
+/* === Source Material Tabs & Upload === */
+.hidden-input {
+    display: none;
 }
 
-.input-file { display: none; }
-
-.upload-btn {
-  background-color: #1e7d20;
-  color: #fff;
-  font-weight: 600;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s ease;
-  font-size: 0.9rem;
+.tab-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
 }
 
-.upload-btn:hover { background-color: #146014; }
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
 
-.file-name {
-  font-size: 0.85rem;
-  color: #555;
-  font-style: italic;
-  max-width: 200px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.tab-btn.active {
+    background-color: #065f46; /* Dark Green */
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.tab-btn.inactive {
+    background-color: #e5e7eb; /* Light Gray */
+    color: #374151;
+}
+
+.tab-btn:hover {
+    opacity: 0.9;
+}
+
+/* File Feedback Box */
+.file-feedback-box {
+    text-align: center;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px dashed #d1d5db;
+    margin-top: 5px;
+}
+
+.file-success-msg {
+    color: #065f46;
+    font-weight: 600;
+}
+
+.file-empty-msg {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+/* Topic Text Area */
+.topic-textarea {
+    height: auto;
+    padding: 12px;
+    width: 100%;
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
 }
 
 /* === Generate Button === */
@@ -181,7 +257,6 @@
 .assessment-result {
   margin-top: 40px;
   width: 100%;
-  /* max-width: 800px; */
   animation: fadeIn 0.5s ease-in-out;
 }
 
@@ -208,9 +283,8 @@
   margin: 0;
 }
 
-/* The Zip Download Button */
 .download-zip-btn {
-  background-color: #2e7d32; /* Strong Green */
+  background-color: #2e7d32;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -229,15 +303,6 @@
   background-color: #1b5e20;
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(46, 125, 50, 0.3);
-}
-
-.download-hint {
-  font-size: 0.85rem;
-  color: #666;
-  margin-top: -10px;
-  margin-bottom: 20px;
-  font-style: italic;
-  text-align: right;
 }
 
 /* === Error === */

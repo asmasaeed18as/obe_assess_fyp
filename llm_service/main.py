@@ -75,6 +75,8 @@ class QuestionConfig(BaseModel):
     bloom_level: str
     difficulty: str
     weightage: str
+    # ✅ NEW: Field to track if it's an MCQ, Short Question, or Standard
+    question_type: Optional[str] = "Standard" 
 
 class LLMRequest(BaseModel):
     text: str
@@ -84,48 +86,90 @@ class LLMRequest(BaseModel):
 @app.post("/generate")
 def generate_assessment(req: LLMRequest):
     """
-    Generates assessment questions based on text context and configuration.
+    Generates assessment questions TAILORED to specific types (Quiz/MCQs, Lab, Project)
+    and supports sub-options (e.g., mixing MCQs and Short Questions).
     """
     
-    # 1. Build requirements string
+    # --- STRATEGY PATTERN FOR PROMPTS ---
+    # This dictionary defines how the LLM should behave for each main assessment category
+    strategies = {
+        "Quiz/MCQs": {
+            "role": "You are a quiz master.",
+            "task": "Generate a mix of Multiple Choice Questions (MCQs) and Short Questions based on the requirements.",
+            "format_instruction": "Check individual item types. For MCQs, provide 4 options. For Short Questions, options must be null.",
+            "structure": "Mixed"
+        },
+        "Lab Manual": {
+            "role": "You are a senior lab instructor.",
+            "task": "Generate practical Lab Tasks. These should be hands-on activities.",
+            "format_instruction": "Rename 'question' to 'Task Description'. Use 'answer' for the 'Procedure & Expected Output'. Options=null.",
+            "structure": "Practical Task"
+        },
+        "Project Report": {
+            "role": "You are a project supervisor.",
+            "task": "Generate distinct Project Topics/Proposals based on the material.",
+            "format_instruction": "Rename 'question' to 'Project Title & Problem Statement'. Use 'answer' for 'Implementation Steps & Methodology'. Options=null.",
+            "structure": "Project Proposal"
+        },
+        "Assignment": {
+            "role": "You are an academic professor.",
+            "task": "Generate high-level analytical and theoretical questions.",
+            "format_instruction": "Questions must be open-ended. 'answer' should contain a detailed model solution/key points. Options=null.",
+            "structure": "Analytical Question"
+        },
+        "Exam": {
+            "role": "You are an examiner.",
+            "task": "Generate standard academic exam questions.",
+            "format_instruction": "Standard question and detailed answer format.",
+            "structure": "Exam Question"
+        }
+    }
+
+    # Select strategy (Default to Exam if unknown)
+    strategy = strategies.get(req.assessment_type, strategies["Exam"])
+
+    # 1. Build requirements string with SPECIFIC TYPES
     requirements_list = ""
     for q in req.questions_config:
+        # If frontend didn't send a specific type (e.g., for Assignment), fallback to strategy default
+        q_type = q.question_type if q.question_type else strategy.get("structure", "Standard")
+        
         requirements_list += (
-            f"- Question {q.id}: {q.weightage} Marks, "
-            f"CLO: {q.clo}, "
-            f"Bloom Level: {q.bloom_level}, "
-            f"Difficulty: {q.difficulty}\n"
+            f"- Item {q.id}: Type={q_type}, {q.weightage} Marks, CLO: {q.clo}, Bloom: {q.bloom_level}, Difficulty: {q.difficulty}\n"
         )
 
     num_questions = len(req.questions_config)
 
-    # 2. Prepare the Prompt
+    # 2. Prepare the Dynamic Prompt
     prompt = f"""
-You are an expert academic AI. Generate an assessment based on the provided text.
-
+{strategy['role']}
 CONTEXT MATERIAL:
-{req.text[:30000]}... (truncated)
+{req.text[:40000]}... (truncated)
 
-TASK:
-Generate exactly {num_questions} questions for a {req.assessment_type}.
+YOUR TASK:
+{strategy['task']}
+Generate exactly {num_questions} items based on the list below.
 
-CONSTRAINTS:
+IMPORTANT - ITEM TYPES CONFIGURATION:
+- If Type="MCQ": Provide a question and exactly 4 options ["A", "B", "C", "D"]. Answer must be the correct option text.
+- If Type="Short Question" (or other): Provide question and model answer. Options must be null.
+
+REQUIREMENTS LIST:
 {requirements_list}
 
-OUTPUT FORMAT:
-Return ONLY valid JSON. Do not include markdown formatting, preambles, or explanations.
-The output must match this schema exactly:
+STRICT JSON OUTPUT FORMAT:
+{strategy['format_instruction']}
+Return ONLY valid JSON matching this schema exactly:
 {{
     "questions": [
         {{
             "id": 1,
-            "question": "The question text...",
-            "answer": "The model answer...",
+            "question": "Question text...",
+            "options": ["Option A", "Option B", "Option C", "Option D"] OR null, 
+            "answer": "Correct Answer",
             "marks": "5",
             "rubric": {{
-                "Excellent": "Criteria for full marks...",
-                "Average": "Criteria for partial marks...",
-                "Poor": "Criteria for low marks..."
+                "Criteria 1": "Description..."
             }}
         }}
     ]
@@ -157,18 +201,20 @@ The output must match this schema exactly:
         if i < len(questions_data):
             q_data = questions_data[i]
         
-        # Force metadata correctness from config
+        # Force metadata correctness from config (overwrites LLM hallucinations)
         q_data["id"] = config.id
         q_data["marks"] = config.weightage
         q_data["meta"] = {
             "clo": config.clo,
             "bloom": config.bloom_level,
-            "difficulty": config.difficulty
+            "difficulty": config.difficulty,
+            # Store the final type used so frontend knows how to display it
+            "type": config.question_type or strategy["structure"]
         }
 
         # Fallback if specific fields are missing
         if "question" not in q_data:
-            q_data["question"] = f"Error: Could not generate question {config.id}."
+            q_data["question"] = f"Error: Generation failed for Item {config.id}."
             q_data["answer"] = "N/A"
             q_data["rubric"] = {}
 
@@ -177,18 +223,15 @@ The output must match this schema exactly:
     # 6. Return Structured Response
     return JSONResponse(
         content={
-            "job_id": f"job_{random.randint(1000,9999)}",
             "metadata": {
                 "assessment_type": req.assessment_type,
-                "total_questions": num_questions,
-                "model": "gemma (local)"
+                "strategy_used": strategy["task"],
+                "total_questions": num_questions
             },
             "questions": final_questions
         },
         status_code=200
     )
-
-
 # ==========================================
 # 3. FEATURE: ASSESSMENT MARKING (NEW)
 # ==========================================
