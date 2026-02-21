@@ -115,4 +115,5 @@ If you are assigned a new feature, follow these steps to keep the structure clea
 You need a superuser to access the Django Admin panel. Run this in your terminal:
 
 PowerShell
+
 python manage.py createsuperuser
