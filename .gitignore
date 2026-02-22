@@ -36,3 +36,4 @@ dist/
 # Mac / Windows junk
 .DS_Store
 Thumbs.db
+obe_assess/obe_assess/settings.py

@@ -12,6 +12,6 @@ urlpatterns = [
     path("me/", ProfileView.as_view(), name="me"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("", UserListView.as_view(), name="user-list"),  # admin only
-    # ✅ NEW: Dashboard Data Endpoint
-    path('dashboard/', DashboardDataView.as_view(), name='dashboard_data'),
+    # ✅ FIXED: Changed 'dashboard/' to 'dashboard-data/' to match React
+    path('dashboard-data/', DashboardDataView.as_view(), name='dashboard_data'),
 ]

@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     UploadMaterialAndGenerateAssessment, 
     DownloadSpecificAssessment, 
+    CourseAssessmentListView,
     DownloadAssessmentZip  # <--- MAKE SURE THIS IS IMPORTED
 )
 
@@ -18,4 +19,5 @@ urlpatterns = [
     path('download/<uuid:assessment_id>/<str:content_type>/<str:file_format>/', 
          DownloadSpecificAssessment.as_view(), 
          name='download_specific'),
+    path('course/<int:course_id>/', CourseAssessmentListView.as_view(), name='course_assessments'),
 ]

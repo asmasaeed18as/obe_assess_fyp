@@ -582,6 +582,107 @@
   border-color: #fca5a5;
 }
 
+/* =========================================
+   NEW: Assessments Section (Course Detail)
+   ========================================= */
+
+/* --- Header Row (Title + Button) --- */
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  margin-top: 20px;
+}
+
+/* --- The "+ Create Assessment" Button --- */
+.create-new-btn {
+  background-color: #5b5fc7; /* Your Brand Purple */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.create-new-btn:hover {
+  background-color: #4347a8; /* Darker purple on hover */
+}
+
+/* --- Assessment List Container --- */
+.assessment-grid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- Individual Assessment Card --- */
+.assessment-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: white;
+  border-radius: 8px;
+  border-left: 5px solid #6366f1; /* Purple accent strip */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.assessment-item-card:hover {
+  transform: translateX(5px); /* Subtle slide animation */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Left Side of Card (Badge + Date) --- */
+.assess-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.assess-date {
+  font-weight: 600;
+  color: #374151; /* Dark Gray */
+  font-size: 0.95rem;
+}
+
+/* --- Right Side of Card (Download Button) --- */
+.assess-actions .action-btn {
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+/* Add this to the bottom of Dashboard.css */
+
+/* Container for PLO badges next to CLO code */
+.plo-tags-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* The PLO Badge itself */
+.plo-badge {
+  background-color: #d1fae5; /* Light Green */
+  color: #065f46;            /* Dark Green Text */
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid #a7f3d0;
+  letter-spacing: 0.5px;
+}
+
+/* Optional: Color code the Bloom Badges */
+.bloom-badge.c { background: #fff7ed; color: #c2410c; border-color:#ffedd5; } /* Orange */
+.bloom-badge.p { background: #fdf4ff; color: #86198f; border-color:#f0abfc; } /* Purple */
+.bloom-badge.a { background: #eff6ff; color: #1e40af; border-color:#bfdbfe; } /* Blue */
 
 
 
