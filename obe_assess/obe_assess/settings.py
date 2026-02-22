@@ -86,9 +86,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'obe_db',
         'USER': 'postgres',
-        'PASSWORD': 'password',
+        'PASSWORD': 'aima',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5433',
     }
 }
 AUTH_USER_MODEL = 'users.User'  # point to our custom user model

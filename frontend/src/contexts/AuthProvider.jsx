@@ -5,13 +5,21 @@ import { jwtDecode } from "jwt-decode";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Load user on refresh
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (token) {
-      setUser(jwtDecode(token));
+      try {
+        setUser(jwtDecode(token));
+      } catch (e) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        setUser(null);
+      }
     }
+    setLoading(false);
   }, []);
 
   // LOGIN
@@ -43,7 +51,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
