@@ -1,4 +1,4 @@
-"""
+﻿"""
 URL configuration for obe_assess project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -22,10 +22,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/users/", include("users.urls")),
     path("api/assessment/", include("assessment_creation.urls")),
-    # ✅ OPTION A: If you want urls like /api/courses/
+    # âœ… OPTION A: If you want urls like /api/courses/
     path('api/', include('course_management.urls')),
-    # ✅ NEW: Connect the Grading App here
+    # âœ… NEW: Connect the Grading App here
     path("api/grading/", include("assessment_marking.urls")),
+    path("api/analytics/", include("assessment_analytics.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

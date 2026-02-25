@@ -1,4 +1,4 @@
-from django.urls import path
+﻿from django.urls import path
 from .views import (
     # Admin / Hierarchy
     LMSHierarchyView,
@@ -11,7 +11,8 @@ from .views import (
     
     # Content / CLOs
     CourseListView,
-    CourseDetailView, # ✅ IMPORT THE NEW VIEW
+    CourseDetailView, # âœ… IMPORT THE NEW VIEW
+    CourseCLOAnalyticsView,
     UploadOutlineView,
     ListCourseCLOsView,
     CLOUpdateView
@@ -29,8 +30,9 @@ urlpatterns = [
     
     # --- Generic Course & Content Routes ---
     path("courses/", CourseListView.as_view(), name="course-list"), # Catalog
-    # ✅ ADD THIS NEW PATH RIGHT HERE:
+    # âœ… ADD THIS NEW PATH RIGHT HERE:
     path("courses/<int:pk>/", CourseDetailView.as_view(), name="course-detail"),
+    path("courses/<int:pk>/analytics/clo/", CourseCLOAnalyticsView.as_view(), name="course-clo-analytics"),
     # CLO & Outline (Linked to Generic Course ID)
     path("courses/<int:course_id>/upload-outline/", UploadOutlineView.as_view(), name="upload-outline"),
     path("courses/<int:course_id>/clos/", ListCourseCLOsView.as_view(), name="course-clos"),
