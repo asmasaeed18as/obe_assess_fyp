@@ -40,8 +40,8 @@ class GradeAssessmentView(APIView):
                 result = mark_assessment_logic(s_path, r_path)
 
                 # 4. Save & Return
-                submission.ai_result_json = result
-                submission.save()
+                GradedSubmission.objects.filter(id=submission.id).update(ai_result_json=result)
+                submission.refresh_from_db()
 
                 # --- Attempt to map per_question entries to CLOs when course known ---
                 try:
