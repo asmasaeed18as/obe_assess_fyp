@@ -2,7 +2,7 @@
 # Tell coverage to only look at your specific apps
 source = users, course_management, assessment_creation,assessment_marking,assessment_analytics
 
-# Tell it to ignore files that don't need testing
+# Tell it to ignore files that don't need testing they just creat messy red green lines for these files so to put an end to we have to add these  to omit them while doing code coverage
 omit =
     */migrations/*
     */tests/*
