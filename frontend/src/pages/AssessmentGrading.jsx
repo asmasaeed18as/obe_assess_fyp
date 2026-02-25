@@ -8,11 +8,17 @@ const AssessmentGrading = () => {
   const [rubricFile, setRubricFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [results, setResults] = useState([]);
   const [error, setError] = useState("");
 
   const handleGrade = async (e) => {
     e.preventDefault();
-    if (!studentFile || !rubricFile) {
+    if (!studentFile) {
+      setError("Please upload the student submission (or ZIP for bulk grading).");
+      return;
+    }
+    const isZip = studentFile?.name?.toLowerCase().endsWith(".zip");
+    if (!isZip && !rubricFile) {
       setError("Please upload both the student submission and the rubric.");
       return;
     }
@@ -20,10 +26,13 @@ const AssessmentGrading = () => {
     setLoading(true);
     setError("");
     setResult(null);
+    setResults([]);
 
     const formData = new FormData();
     formData.append("student_file", studentFile);
-    formData.append("rubric_file", rubricFile);
+    if (rubricFile) {
+      formData.append("rubric_file", rubricFile);
+    }
 
     try {
       const res = await api.post("/grading/grade/", formData, {
@@ -31,12 +40,21 @@ const AssessmentGrading = () => {
       });
 
       // Django returns { data: serializer } where `ai_result_json` holds the grading payload
-      const submissionId = res?.data?.data?.id;
-      if (submissionId) {
-        localStorage.setItem("grading_submission_id", submissionId);
+      const data = res?.data?.data;
+      if (Array.isArray(data)) {
+        setResults(data);
+        const firstId = data?.[0]?.id;
+        if (firstId) {
+          localStorage.setItem("grading_submission_id", firstId);
+        }
+      } else {
+        const submissionId = data?.id;
+        if (submissionId) {
+          localStorage.setItem("grading_submission_id", submissionId);
+        }
+        const payload = data?.ai_result_json || data;
+        setResult(payload || null);
       }
-      const payload = res?.data?.data?.ai_result_json || res?.data?.data;
-      setResult(payload || null);
     } catch (err) {
       console.error("Grading failed:", err);
       setError("Failed to grade assessment. Please check your files and try again.");
@@ -75,10 +93,10 @@ const AssessmentGrading = () => {
           <label className="section-label">Upload Documents</label>
           <div className="grid-row">
             <div className="upload-group" style={{ flex: 1 }}>
-              <label className="sub-label">Student Submission (PDF)</label>
+              <label className="sub-label">Student Submission (PDF/DOCX/ZIP)</label>
               <input
                 type="file"
-                accept=".pdf,.docx"
+                accept=".pdf,.docx,.zip"
                 onChange={(e) => setStudentFile(e.target.files[0])}
                 className="input-field"
                 required
@@ -92,7 +110,6 @@ const AssessmentGrading = () => {
                 accept=".pdf,.docx"
                 onChange={(e) => setRubricFile(e.target.files[0])}
                 className="input-field"
-                required
               />
             </div>
           </div>
@@ -159,6 +176,48 @@ const AssessmentGrading = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {results.length > 0 && (
+        <div className="assessment-result fade-in">
+          <div className="result-header-main">
+            <div className="student-info-panel">
+              <h2>Bulk Grading Results</h2>
+              <p className="cms-text"><strong>Students:</strong> {results.length}</p>
+            </div>
+          </div>
+
+          <div className="questions-grid">
+            {results.map((item) => {
+              const payload = item?.ai_result_json || item;
+              const key = item?.id || payload?.cms_id || Math.random();
+              return (
+                <div key={key} className="card-section question-card">
+                  <div className="q-header">
+                    <span className="q-badge">{payload?.cms_id || "Unknown ID"}</span>
+                    <span className="marks-badge">
+                      {payload?.summary?.total_obtained ?? 0} / {payload?.summary?.total_possible ?? 0} ({payload?.summary?.percentage ?? 0}%)
+                    </span>
+                  </div>
+                  <div className="q-body">
+                    <p className="q-text"><strong>Name:</strong> {payload?.student_name || "Unknown"}</p>
+                    {payload?.download_url && (
+                      <a
+                        href={`${import.meta.env.VITE_API_BASE_URL || ""}${payload.download_url}`}
+                        className="download-csv-btn"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                      >
+                        <span>Download CSV Report</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
