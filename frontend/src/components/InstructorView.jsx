@@ -8,7 +8,7 @@ const InstructorView = ({ user, data }) => {
   return (
     <div className="view-container">
       <header className="view-header">
-        <h1>Professor {user.last_name}</h1>
+        <h1>Professor {user.last_name || user.first_name || ""}</h1>
         <p>Your Active Classes</p>
       </header>
 
@@ -17,7 +17,6 @@ const InstructorView = ({ user, data }) => {
           <div 
             key={course.id} 
             className="course-card instructor-card"
-            // Clicking card goes to course details
             onClick={() => navigate(`/dashboard/courses/${course.course_id}`)}
           >
             <div className="status-stripe instructor-color"></div>
@@ -28,10 +27,17 @@ const InstructorView = ({ user, data }) => {
                     <span className="badge">{course.section_name}</span>
                 </div>
                 
-                <div className="instructor-actions">
+                {/* ✅ NEW: Enrollment Code Display */}
+                <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>Enroll Code:</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 'bold', color: '#2563eb', letterSpacing: '2px' }}>
+                        {course.enrollment_code || "N/A"}
+                    </span>
+                </div>
+                
+                <div className="instructor-actions" style={{ marginTop: '15px' }}>
                     <div className="stat">👥 {course.students_count} Students</div>
                     
-                    {/* Shortcut Button: Stops propagation so it doesn't open course detail */}
                     <button 
                         className="btn-sm"
                         onClick={(e) => {

@@ -58,7 +58,7 @@ def call_ollama(prompt, model="gemma3:1b", options=None):
                 "stream": False,
                 "options": options
             },
-            timeout=180 # Extended timeout for long generations
+            timeout=300 # Extended timeout for long generations
         )
         resp.raise_for_status()
         return resp.json().get("response", "").strip()
@@ -91,37 +91,36 @@ def generate_assessment(req: LLMRequest):
     and supports sub-options (e.g., mixing MCQs and Short Questions).
     """
     
-    # --- STRATEGY PATTERN FOR PROMPTS ---
-    # This dictionary defines how the LLM should behave for each main assessment category
+    # --- STRATEGY PATTERN FOR PROMPTS (OPTIMIZED) ---
     strategies = {
         "Quiz/MCQs": {
             "role": "You are a quiz master.",
-            "task": "Generate a mix of Multiple Choice Questions (MCQs) and Short Questions based on the requirements.",
-            "format_instruction": "Check individual item types. For MCQs, provide 4 options. For Short Questions, options must be null.",
+            "task": "Generate a mix of Multiple Choice Questions (MCQs) and Short Questions.",
+            "format_instruction": "For MCQs, 'options' MUST be a list of 4 choices [\"A\", \"B\", \"C\", \"D\"]. For Short Questions, 'options' MUST be null.",
             "structure": "Mixed"
         },
         "Lab Manual": {
-            "role": "You are a senior lab instructor.",
-            "task": "Generate practical Lab Tasks. These should be hands-on activities.",
-            "format_instruction": "Rename 'question' to 'Task Description'. Use 'answer' for the 'Procedure & Expected Output'. Options=null.",
+            "role": "You are a senior computer science lab instructor.",
+            "task": "Generate hands-on, practical Lab Tasks. Students need to write code, run commands, or analyze output.",
+            "format_instruction": "The 'question' field MUST contain the Lab Task Scenario. The 'answer' field MUST contain the expected output or code solution. 'options' MUST be null.",
             "structure": "Practical Task"
         },
         "Project Report": {
-            "role": "You are a project supervisor.",
-            "task": "Generate distinct Project Topics/Proposals based on the material.",
-            "format_instruction": "Rename 'question' to 'Project Title & Problem Statement'. Use 'answer' for 'Implementation Steps & Methodology'. Options=null.",
+            "role": "You are a university project supervisor.",
+            "task": "Generate comprehensive Project Proposals/Milestones based on the material.",
+            "format_instruction": "The 'question' field MUST contain the Problem Statement. The 'answer' field MUST contain the Evaluation Methodology. 'options' MUST be null.",
             "structure": "Project Proposal"
         },
         "Assignment": {
             "role": "You are an academic professor.",
-            "task": "Generate high-level analytical and theoretical questions.",
-            "format_instruction": "Questions must be open-ended. 'answer' should contain a detailed model solution/key points. Options=null.",
+            "task": "Generate high-level analytical, mathematical, or theoretical assignment questions.",
+            "format_instruction": "Questions must be open-ended requiring detailed work. 'answer' should contain the model solution. 'options' MUST be null.",
             "structure": "Analytical Question"
         },
         "Exam": {
-            "role": "You are an examiner.",
+            "role": "You are a strict examiner.",
             "task": "Generate standard academic exam questions.",
-            "format_instruction": "Standard question and detailed answer format.",
+            "format_instruction": "Standard question and detailed model answer format. 'options' MUST be null.",
             "structure": "Exam Question"
         }
     }
@@ -132,53 +131,62 @@ def generate_assessment(req: LLMRequest):
     # 1. Build requirements string with SPECIFIC TYPES
     requirements_list = ""
     for q in req.questions_config:
-        # If frontend didn't send a specific type (e.g., for Assignment), fallback to strategy default
         q_type = q.question_type if q.question_type else strategy.get("structure", "Standard")
-        
         requirements_list += (
             f"- Item {q.id}: Type={q_type}, {q.weightage} Marks, CLO: {q.clo}, Bloom: {q.bloom_level}, Difficulty: {q.difficulty}\n"
         )
 
     num_questions = len(req.questions_config)
 
-    # 2. Prepare the Dynamic Prompt
+    # 2. Prepare the Highly Restrictive Dynamic Prompt
     prompt = f"""
-{strategy['role']}
-CONTEXT MATERIAL:
-{req.text[:40000]}... (truncated)
+    You are an expert academic content creator.
+    {strategy['role']}
 
-YOUR TASK:
-{strategy['task']}
-Generate exactly {num_questions} items based on the list below.
+    CONTEXT MATERIAL:
+    {req.text[:8000]}
 
-IMPORTANT - ITEM TYPES CONFIGURATION:
-- If Type="MCQ": Provide a question and exactly 4 options ["A", "B", "C", "D"]. Answer must be the correct option text.
-- If Type="Short Question" (or other): Provide question and model answer. Options must be null.
+    YOUR TASK:
+    {strategy['task']}
+    
+    CRITICAL INSTRUCTION: You MUST generate EXACTLY {num_questions} items based on the Requirements List below. DO NOT STOP EARLY. If there are {num_questions} items required, your JSON array MUST contain exactly {num_questions} objects.
 
-REQUIREMENTS LIST:
-{requirements_list}
+    REQUIREMENTS LIST:
+    {requirements_list}
 
-STRICT JSON OUTPUT FORMAT:
-{strategy['format_instruction']}
-Return ONLY valid JSON matching this schema exactly:
-{{
-    "questions": [
-        {{
-            "id": 1,
-            "question": "Question text...",
-            "options": ["Option A", "Option B", "Option C", "Option D"] OR null, 
-            "answer": "Correct Answer",
-            "marks": "5",
-            "rubric": {{
-                "Criteria 1": "Description..."
+    STRICT JSON OUTPUT INSTRUCTIONS:
+    {strategy['format_instruction']}
+    - For the 'rubric', you MUST write a specific, context-aware 1-sentence grading criterion for "Excellent", "Average", and "Poor" tailored specifically to the generated question. Do not leave them blank.
+
+    You MUST return ONLY valid JSON matching this schema exactly. DO NOT rename the JSON keys:
+    {{
+        "questions": [
+            {{
+                "id": 1,
+                "question": "<Write the detailed task, scenario, or question here>",
+                "options": ["<Option A>", "<Option B>", "<Option C>", "<Option D>"] OR null, 
+                "answer": "<Write the expected output, code, model solution, or correct option here>",
+                "marks": "5",
+                "rubric": {{
+                    "Excellent": "<Write exactly what the student must include to get full marks>",
+                    "Average": "<Write exactly what a partial or half-correct answer looks like>",
+                    "Poor": "<Write exactly what a failing or incorrect answer looks like>"
+                }}
             }}
-        }}
-    ]
-}}
-"""
+        ]
+    }}
+    """
 
-    # 3. Call Ollama
-    result_text = call_ollama(prompt)
+    # 3. Call Ollama with SPECIFIC hyperparameter options to prevent early cut-offs
+    ollama_options = {
+        "temperature": 0.3,   # Slight creativity for question generation
+        "top_k": 40,
+        "num_predict": 4000,  # CRITICAL: Forces Ollama to allow long outputs (fixes missing questions)
+        "num_ctx": 8192       # CRITICAL: Gives it enough memory to read the document context
+    }
+    
+    # ✅ USING GEMMA 3 (1B)
+    result_text = call_ollama(prompt, model="gemma3:1b", options=ollama_options)
 
     # 4. Clean and Extract JSON
     clean_json_str = clean_and_extract_json(result_text)
@@ -189,7 +197,6 @@ Return ONLY valid JSON matching this schema exactly:
         questions_data = parsed.get("questions", [])
     except json.JSONDecodeError:
         print("❌ JSON Decode Error. The LLM output was not valid JSON.")
-        # We return empty list here, fallback logic below handles it
         questions_data = []
 
     # 5. Validation & Fallback (Merge with Config)
@@ -209,15 +216,19 @@ Return ONLY valid JSON matching this schema exactly:
             "clo": config.clo,
             "bloom": config.bloom_level,
             "difficulty": config.difficulty,
-            # Store the final type used so frontend knows how to display it
             "type": config.question_type or strategy["structure"]
         }
 
-        # Fallback if specific fields are missing
+        # Fallback if specific fields are missing or if generation stopped early
         if "question" not in q_data:
-            q_data["question"] = f"Error: Generation failed for Item {config.id}."
+            q_data["question"] = f"Error: Generation failed for Item {config.id}. The AI model stopped early."
             q_data["answer"] = "N/A"
-            q_data["rubric"] = {}
+            q_data["options"] = None
+            q_data["rubric"] = {
+                "Excellent": "N/A",
+                "Average": "N/A",
+                "Poor": "N/A"
+            }
 
         final_questions.append(q_data)
 
