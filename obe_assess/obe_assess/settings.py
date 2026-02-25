@@ -87,12 +87,12 @@ WSGI_APPLICATION = 'obe_assess.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'obe_db',
-        'USER': 'postgres',
-        'PASSWORD': 'aima',
-        'HOST': '127.0.0.1',
-        'PORT': '5433',  # Must be 5433 based on your terminal test
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', ''),
+        'USER': os.getenv('DB_USER', ''),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''), 
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', ''),
     }
 }
 AUTH_USER_MODEL = 'users.User'  # point to our custom user model

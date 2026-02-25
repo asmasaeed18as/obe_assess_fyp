@@ -4,7 +4,8 @@ import zipfile
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
+from .permissions import IsInstructor  # ✅ Import your new custom permissio
 from django.http import FileResponse, Http404
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -28,9 +29,11 @@ LLM_GENERATE_URL = f"{BASE_LLM_URL}/generate"
 
 
 class UploadMaterialAndGenerateAssessment(APIView):
-    # Explicitly disable authentication to prevent 401 errors for now
-    authentication_classes = [] 
-    permission_classes = [AllowAny]
+    # 🛑 DELETED comment out this line so Django uses your default JWT authentication
+    # authentication_classes = [] 
+    
+    # ✅ APPLY the strict permissions
+    permission_classes = [IsAuthenticated, IsInstructor]
 
     def post(self, request):
         # 1. Extract Files and Data
@@ -142,8 +145,8 @@ class UploadMaterialAndGenerateAssessment(APIView):
 # View for Downloading Single Format (Legacy)
 # ==========================================
 class DownloadSpecificAssessment(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
+    # now only instructor can download specific formats, students will use the ZIP bundle which has more options
+    permission_classes = [IsAuthenticated, IsInstructor]
 
     def get(self, request, assessment_id, content_type, file_format):
         try:
@@ -178,8 +181,8 @@ class DownloadSpecificAssessment(APIView):
 # View for ZIP Bundle Download
 # ==========================================
 class DownloadAssessmentZip(APIView):
-    authentication_classes = []  # Disable Auth
-    permission_classes = [AllowAny]
+    # Only instructors can download the ZIP bundle, students can only access individual formats if we choose to allow that in the future. This keeps the bundle as a premium feature for instructors.
+    permission_classes = [IsAuthenticated, IsInstructor]
 
     def get(self, request, assessment_id, file_format='docx'):
         try:
@@ -211,7 +214,8 @@ class CourseAssessmentListView(generics.ListAPIView):
     Returns a list of assessments for a specific course_id.
     """
     serializer_class = AssessmentSerializer
-    permission_classes = [AllowAny] 
+    # Only authenticated instructors can view the list of assessments for a course. Students will not have access to this endpoint, as they should only interact with assessments through the course interface where we can control what they see.
+    permission_classes = [IsAuthenticated, IsInstructor]
 
     def get_queryset(self):
         course_id = self.kwargs['course_id']
