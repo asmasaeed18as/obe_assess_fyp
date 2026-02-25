@@ -1,4 +1,4 @@
-import re
+﻿import re
 from collections import OrderedDict
 
 def _find_question_starts(text):
@@ -7,21 +7,27 @@ def _find_question_starts(text):
         starts.append((m.start(), m.group(0).strip()))
     return starts
 
+def _extract_clo(block):
+    m = re.search(r"\bCLO\s*[-: ]?\s*(\d+)\b", block, flags=re.IGNORECASE)
+    if m:
+        return f"CLO-{m.group(1)}"
+    return None
+
 def segment_questions(text):
     text = text.strip()
     q_starts = _find_question_starts(text)
-    
+
     if not q_starts:
         # Fallback: split by double newline
         blocks = [b.strip() for b in re.split(r"\n\s*\n", text) if b.strip()]
         questions = OrderedDict()
         for i, b in enumerate(blocks, start=1):
-            questions[f"Q{i}"] = {"question": b, "answer": ""}
+            questions[f"Q{i}"] = {"question": b, "answer": "", "clo": _extract_clo(b)}
         return questions
 
     positions = [pos for pos, _ in q_starts] + [len(text)]
     questions = OrderedDict()
-    
+
     for idx in range(len(q_starts)):
         start_pos = positions[idx]
         end_pos = positions[idx+1]
@@ -34,11 +40,13 @@ def segment_questions(text):
         else:
             qid = f"Q{idx+1}"
 
+        clo = _extract_clo(block)
+
         content_only = re.sub(r"^(?:Q(?:uestion)?\s*\d+[:.)]?)", "", block, flags=re.IGNORECASE).strip()
-        
+
         # Split Question from Answer
         split_marker = re.split(r"\n(?:(?:Answer|Student Answer|Model Answer|Solution)\s*[:\-])", content_only, flags=re.IGNORECASE)
-        
+
         if len(split_marker) >= 2:
             q_text = split_marker[0].strip()
             a_text = "\n".join(s.strip() for s in split_marker[1:]).strip()
@@ -50,8 +58,8 @@ def segment_questions(text):
             else:
                 q_text = content_only
                 a_text = ""
-        
-        questions[qid] = {"question": q_text, "answer": a_text}
+
+        questions[qid] = {"question": q_text, "answer": a_text, "clo": clo}
 
     return questions
 

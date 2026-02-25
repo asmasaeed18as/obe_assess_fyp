@@ -11,6 +11,8 @@ from .models import (
     Course, CourseSection, CourseEnrollment, 
     CourseOutline, CLO
 )
+from assessment_creation.models import Assessment
+from assessment_marking.models import GradedSubmission
 
 # Import Serializers
 from .serializers import (
@@ -138,6 +140,153 @@ class CourseDetailView(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     permission_classes = [AllowAny]
+
+
+class CourseCLOAnalyticsView(APIView):
+    """Compute CLO attainment stats for a course based on graded submissions.
+
+    Returns per-CLO: total students, average attainment, passed, failed, distribution.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk, *args, **kwargs):
+        course = get_object_or_404(Course, pk=pk)
+
+        # Threshold (default 60%) - can be overridden by query param ?threshold=70
+        try:
+            threshold = float(request.query_params.get('threshold', 60))
+        except Exception:
+            threshold = 60.0
+
+        # Build question -> CLO mapping from saved Assessments for this course
+        question_map = []  # list of dicts: {'text':..., 'clo':..., 'possible': int}
+        assessments = Assessment.objects.filter(course=course)
+        for a in assessments:
+            r = a.result_json or {}
+            qs = r.get('questions', []) if isinstance(r, dict) else []
+            for q in qs:
+                qtext = (q.get('question') or '').strip()
+                meta = q.get('meta', {}) if isinstance(q.get('meta', {}), dict) else {}
+                clo = meta.get('clo') or q.get('clo') or 'UNMAPPED'
+                try:
+                    possible = int(q.get('marks') or 0)
+                except Exception:
+                    possible = 0
+                question_map.append({'text': qtext, 'clo': clo, 'possible': possible})
+
+        # Gather graded submissions for this course
+        submissions = GradedSubmission.objects.filter(course=course)
+
+        # Accumulate per-CLO per-student percentages
+        clo_students = {}  # clo -> list of {'cms_id':..., 'student_name':..., 'percent': float}
+
+        for s in submissions:
+            ai = s.ai_result_json or {}
+            per_q = ai.get('per_question', {}) if isinstance(ai, dict) else {}
+
+            # Per student totals per CLO
+            student_totals = {}  # clo -> {'obtained': int, 'possible': int}
+
+            for qid, qdata in per_q.items():
+                qtext = (qdata.get('question') or '').strip()
+                try:
+                    obtained = int(qdata.get('marks_awarded', 0))
+                except Exception:
+                    try:
+                        obtained = int(float(qdata.get('marks_awarded', 0)))
+                    except Exception:
+                        obtained = 0
+                try:
+                    possible = int(qdata.get('max_marks', 0))
+                except Exception:
+                    possible = 0
+
+                # Find best mapping by simple normalization/membership
+                mapped_clo = None
+                norm_qtext = qtext.lower()
+                for m in question_map:
+                    mq = (m['text'] or '').lower()
+                    if not mq:
+                        continue
+                    if norm_qtext == mq or norm_qtext in mq or mq in norm_qtext:
+                        mapped_clo = m['clo']
+                        # prefer mapping's possible if available
+                        if m.get('possible'):
+                            possible = m.get('possible')
+                        break
+
+                if not mapped_clo:
+                    mapped_clo = 'UNMAPPED'
+
+                agg = student_totals.setdefault(mapped_clo, {'obtained': 0, 'possible': 0})
+                agg['obtained'] += obtained
+                agg['possible'] += possible
+
+            # finalize per-clo percentages for this student
+            student_name = ai.get('student_name') or ai.get('student', {}).get('name') if isinstance(ai, dict) else None
+            cms_id = ai.get('cms_id') or ai.get('student', {}).get('cms_id') if isinstance(ai, dict) else None
+
+            for clo, totals in student_totals.items():
+                possible = totals.get('possible', 0)
+                obtained = totals.get('obtained', 0)
+                percent = None
+                if possible > 0:
+                    try:
+                        percent = round((obtained / possible * 100), 2)
+                    except Exception:
+                        percent = None
+
+                clo_students.setdefault(clo, []).append({
+                    'cms_id': cms_id,
+                    'student_name': student_name,
+                    'percent': percent
+                })
+
+        # Build analytics per CLO
+        result = {}
+        for clo, students in clo_students.items():
+            # filter out None percentages when computing averages
+            percents = [s['percent'] for s in students if isinstance(s.get('percent'), (int, float))]
+            total = len(students)
+            avg = round(sum(percents) / len(percents), 2) if percents else None
+            passed = len([p for p in percents if p >= threshold])
+            failed = len([p for p in percents if p < threshold])
+
+            # distribution buckets
+            buckets = {"0-50": 0, "50-60": 0, "60-70": 0, "70-80": 0, "80-90": 0, "90-100": 0}
+            for p in percents:
+                if p < 50:
+                    buckets["0-50"] += 1
+                elif p < 60:
+                    buckets["50-60"] += 1
+                elif p < 70:
+                    buckets["60-70"] += 1
+                elif p < 80:
+                    buckets["70-80"] += 1
+                elif p < 90:
+                    buckets["80-90"] += 1
+                else:
+                    buckets["90-100"] += 1
+
+            # above average: compare to avg
+            above_avg = len([p for p in percents if avg is not None and p > avg])
+
+            result[clo] = {
+                'total_students': total,
+                'students_with_score': len(percents),
+                'average_percent': avg,
+                'passed': passed,
+                'failed': failed,
+                'above_average': above_avg,
+                'distribution': buckets,
+                'students': students
+            }
+
+        return Response({
+            'course': {'id': course.id, 'code': course.code, 'title': course.title},
+            'threshold': threshold,
+            'clo_attainment': result
+        })
 class UploadOutlineView(APIView):
     """
     Uploads outline to a GENERIC COURSE, extracts CLOs, saves them.
