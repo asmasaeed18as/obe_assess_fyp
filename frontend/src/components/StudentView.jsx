@@ -8,7 +8,7 @@ const StudentView = ({ user, data }) => {
   return (
     <div className="view-container">
       <header className="view-header">
-        <h1>Hello, {user.first_name || "Student"}!</h1>
+        <h1> {user.first_name || user.last_name}</h1>
         <p>You are enrolled in {courses.length} courses.</p>
       </header>
 

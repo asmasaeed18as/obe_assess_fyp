@@ -20,10 +20,15 @@ from .utils import (
     generate_zip_bundle
 )
 
-LLM_SERVICE_URL = getattr(settings, "LLM_SERVICE_URL", "http://127.0.0.1:8001/generate")
+# ✅ SMART URL CONFIGURATION
+# 1. Grab the base URL (defaults to 127.0.0.1:8001) and strip any accidental trailing slashes
+BASE_LLM_URL = getattr(settings, "LLM_SERVICE_URL", "http://127.0.0.1:8001").rstrip('/')
+# 2. Append the specific endpoint for THIS app
+LLM_GENERATE_URL = f"{BASE_LLM_URL}/generate"
+
 
 class UploadMaterialAndGenerateAssessment(APIView):
-    # ✅ Explicitly disable authentication to prevent 401 errors for now
+    # Explicitly disable authentication to prevent 401 errors for now
     authentication_classes = [] 
     permission_classes = [AllowAny]
 
@@ -32,7 +37,7 @@ class UploadMaterialAndGenerateAssessment(APIView):
         uploaded_file = request.FILES.get("file")
         outline_file = request.FILES.get("outline")
         
-        # ✅ NEW: Get Topic Input from frontend
+        # Get Topic Input from frontend
         topic_input = request.data.get("topic_input", "").strip()
         
         assessment_type = request.data.get("assessment_type", "Assignment")
@@ -63,7 +68,7 @@ class UploadMaterialAndGenerateAssessment(APIView):
         lecture = None
 
         if topic_input:
-            # ✅ OPTION A: TOPIC MODE
+            # OPTION A: TOPIC MODE
             text_content = f"TOPIC/INSTRUCTIONS PROVIDED BY INSTRUCTOR:\n{topic_input}"
             # Create a placeholder lecture record to track this generation
             lecture = LectureMaterial.objects.create(
@@ -71,7 +76,7 @@ class UploadMaterialAndGenerateAssessment(APIView):
                 extracted_text=text_content
             )
         else:
-            # ✅ OPTION B: FILE MODE
+            # OPTION B: FILE MODE
             lecture = LectureMaterial.objects.create(title=uploaded_file.name, file=uploaded_file)
             try:
                 text_content = extract_text_from_pdf_filefield(lecture.file)
@@ -96,7 +101,8 @@ class UploadMaterialAndGenerateAssessment(APIView):
         }
 
         try:
-            resp = requests.post(LLM_SERVICE_URL, json=payload, timeout=180)
+            # ✅ Uses the correctly built LLM_GENERATE_URL 
+            resp = requests.post(LLM_GENERATE_URL, json=payload, timeout=180)
             resp.raise_for_status()
             llm_result = resp.json()
         except requests.exceptions.RequestException as e:
@@ -169,7 +175,7 @@ class DownloadSpecificAssessment(APIView):
 
 
 # ==========================================
-# NEW: View for ZIP Bundle Download
+# View for ZIP Bundle Download
 # ==========================================
 class DownloadAssessmentZip(APIView):
     authentication_classes = []  # Disable Auth
@@ -198,14 +204,13 @@ class DownloadAssessmentZip(APIView):
 
 
 # ==========================================
-# ✅ NEW: View to List Assessments for a Course
+# View to List Assessments for a Course
 # ==========================================
 class CourseAssessmentListView(generics.ListAPIView):
     """
     Returns a list of assessments for a specific course_id.
     """
     serializer_class = AssessmentSerializer
-    # Adjust permission based on your needs (AllowAny if testing without tokens)
     permission_classes = [AllowAny] 
 
     def get_queryset(self):
