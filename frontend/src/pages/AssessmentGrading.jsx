@@ -43,14 +43,16 @@ const AssessmentGrading = () => {
       const data = res?.data?.data;
       if (Array.isArray(data)) {
         setResults(data);
-        const firstId = data?.[0]?.id;
-        if (firstId) {
-          localStorage.setItem("grading_submission_id", firstId);
+        const ids = data.map((d) => d?.id).filter(Boolean);
+        if (ids.length > 0) {
+          localStorage.setItem("grading_submission_ids", JSON.stringify(ids));
+          localStorage.setItem("grading_submission_id", ids[ids.length - 1]);
         }
       } else {
         const submissionId = data?.id;
         if (submissionId) {
           localStorage.setItem("grading_submission_id", submissionId);
+          localStorage.removeItem("grading_submission_ids");
         }
         const payload = data?.ai_result_json || data;
         setResult(payload || null);

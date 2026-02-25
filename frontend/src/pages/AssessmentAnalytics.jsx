@@ -13,7 +13,18 @@ const AssessmentAnalytics = () => {
 
   useEffect(() => {
     const loadAnalytics = async () => {
-      const submissionId = localStorage.getItem("grading_submission_id");
+      const storedIds = localStorage.getItem("grading_submission_ids");
+      let submissionId = localStorage.getItem("grading_submission_id");
+      if (storedIds) {
+        try {
+          const ids = JSON.parse(storedIds);
+          if (Array.isArray(ids) && ids.length > 0) {
+            submissionId = ids[ids.length - 1];
+          }
+        } catch (e) {
+          // ignore parse error and fallback to single id
+        }
+      }
       if (!submissionId) {
         setError("No graded submission found. Please grade an assessment first.");
         setLoading(false);
@@ -22,7 +33,9 @@ const AssessmentAnalytics = () => {
 
       try {
         setLoading(true);
-        const res = await api.get(`/analytics/submission/${submissionId}/clo/`);
+        const res = storedIds
+          ? await api.post(`/analytics/submissions/clo/`, { submission_ids: JSON.parse(storedIds) })
+          : await api.get(`/analytics/submission/${submissionId}/clo/`);
         const data = res?.data || {};
         const chart = Array.isArray(data.clo_chart) ? data.clo_chart : [];
         setCloChart(chart);
