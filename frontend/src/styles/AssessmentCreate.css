@@ -1,410 +1,305 @@
-/* === Main Container === */
+/* === MAIN PAGE (Using Dashboard Variables) === */
 .assessment-container {
-  background: #ffffff;
+  /* Using the exact radial gradient from your root variables */
+  background: var(--bg-gradient); 
+  height: 100vh;
+  padding: 30px 40px 20px 40px;
+  padding-top: 0%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 40px 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  min-height: 100vh;
+  box-sizing: border-box;
 }
 
-/* === Title === */
+/* === TITLE & SUBTITLE === */
+.page-header {
+  margin-bottom: 48px;
+}
+
 .page-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 25px;
-  color: #222;
-  text-align: center;
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -1px;
+  margin-bottom: 4px;
 }
 
-/* === Form Container === */
-.assessment-form {
+.page-subtitle {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+/* === LAYOUT === */
+.workspace-wrapper {
+  display: flex;
+  gap: 32px;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.form-column {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  width: 100%;
-  max-width: 600px;
+  gap: 24px;
 }
 
-/* === General Card Styles === */
+/* === GLASS CARDS (Matching Your Home Page) === */
 .card-section {
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease;
-  background-color: #fff; /* Default */
+  background: var(--glass-bg); /* rgba(255, 255, 255, 0.4) */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px; /* Softened from 32px for internal cards */
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
 }
 
+/* === SECTION LABEL === */
 .section-label {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #444;
-  margin-bottom: 5px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--primary); /* #6366f1 */
+  margin-bottom: 14px;
+  letter-spacing: 0.8px;
+  display: block;
 }
 
-/* === Course Selection Specifics === */
-.course-select-card {
-  border-left: 4px solid #5b5fc7;
-}
-
-.course-badge-card {
-  background: #e0e7ff;
-  border-left: 4px solid #5b5fc7;
-}
-
-.course-badge-label {
-  color: #3730a3;
-}
-
-.course-badge-title {
-  margin: 10px 0 0 0;
-  color: #312e81;
-}
-
-/* === Color Cards === */
-.card-purple { background-color: #ebe7ff; border: 1px solid #dcd6f7; }
-.card-green { background-color: #e9f7e7; border: 1px solid #d4edda; }
-.card-peach { background-color: #fff2e6; border: 1px solid #ffe0b2; }
-
-/* === Dynamic Question Configuration === */
-.questions-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.questions-container h3 {
-  font-size: 1.2rem;
-  color: #333;
-  margin: 15px 0 10px;
-  border-bottom: 2px solid #eee;
-  padding-bottom: 5px;
-}
-
-.question-config-card {
-  background-color: #fcfcfc;
-  border: 1px solid #e0e0e0;
-  position: relative;
-  padding-top: 30px;
-  border-radius: 12px;
-}
-
-/* Header inside question card (Badge + Dropdown) */
-.question-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.q-badge {
-  background-color: #0974b6;
-  color: white;
-  padding: 4px 14px;
-  border-bottom-right-radius: 12px;
-  border-top-left-radius: 11px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-  /* Positioned absolutely within the card if needed, 
-     but using flex header is often cleaner. 
-     Keeping absolute here to match your design. */
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.type-select-dropdown {
-  width: auto;
-  padding: 5px;
-  font-size: 0.85rem;
-  height: 35px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  outline: none;
-}
-
-.grid-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-/* === Input Fields === */
+/* === INPUTS (Glass Styled) === */
 .input-field {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text-main);
   font-size: 0.95rem;
-  color: #333;
-  outline: none;
-  background-color: #fff;
-  transition: all 0.2s;
+  transition: 0.3s ease;
 }
 
 .input-field:focus {
-  border-color: #0974b6;
-  box-shadow: 0 0 0 3px rgba(9, 116, 182, 0.1);
+  outline: none;
+  background: white;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
-/* === Source Material Tabs & Upload === */
-.hidden-input {
-    display: none;
+.grid-row {
+  display: flex;
+  gap: 16px;
 }
 
-.tab-container {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
+/* === SOURCE TABS === */
+.source-tabs-wrapper {
+  display: flex;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px;
+  border-radius: 14px;
+  margin-bottom: 16px;
 }
 
 .tab-btn {
-    flex: 1;
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-    font-size: 0.95rem;
+  flex: 1;
+  border: none;
+  padding: 10px;
+  border-radius: 10px;
+  background: transparent;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: 0.2s;
 }
 
 .tab-btn.active {
-    background-color: #065f46; /* Dark Green */
-    color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.tab-btn.inactive {
-    background-color: #e5e7eb; /* Light Gray */
-    color: #374151;
+/* === FILE UPLOAD === */
+.file-upload-zone {
+  padding: 20px;
+  border-radius: 14px;
+  border: 2px dashed var(--glass-border);
+  background: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: 0.3s;
 }
 
-.tab-btn:hover {
-    opacity: 0.9;
+.file-upload-zone:hover {
+  background: white;
+  border-color: var(--primary);
 }
 
-/* File Feedback Box */
-.file-feedback-box {
-    text-align: center;
-    padding: 12px;
-    background: #f9fafb;
-    border-radius: 8px;
-    border: 1px dashed #d1d5db;
-    margin-top: 5px;
+/* === QUESTIONS GRID === */
+.questions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+  gap: 12px;
 }
 
-.file-success-msg {
-    color: #065f46;
-    font-weight: 600;
+.question-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 8px 12px;
+  border-radius: 12px;
 }
 
-.file-empty-msg {
-    color: #6b7280;
-    font-size: 0.9rem;
+.q-index {
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 30px;
 }
 
-/* Topic Text Area */
-.topic-textarea {
-    height: auto;
-    padding: 12px;
-    width: 100%;
-    resize: vertical;
-    min-height: 100px;
-    font-family: inherit;
+/* === ACTION BAR & BUTTON === */
+.action-bar {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
 }
 
-/* === Generate Button === */
 .generate-btn {
-  background: linear-gradient(135deg, #0974b6 0%, #075f96 100%);
+  width: 300px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border-radius: 16px;
   border: none;
-  border-radius: 30px;
-  padding: 16px;
-  color: #ffffff;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
   transition: all 0.3s ease;
-  font-size: 1.1rem;
-  margin-top: 15px;
-  box-shadow: 0 4px 15px rgba(9, 116, 182, 0.3);
-  width: 100%;
 }
 
 .generate-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(9, 116, 182, 0.4);
+  box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
+  filter: brightness(1.1);
 }
 
-.generate-btn.disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+/* --- Settings Centering --- */
+.settings-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex: 1;
+  padding-top: 20px;
 }
 
-/* === Assessment Result Section === */
-.assessment-result {
-  margin-top: 40px;
+.settings-glass-card {
   width: 100%;
-  animation: fadeIn 0.5s ease-in-out;
+  max-width: 650px;
+  padding: 40px !important;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* --- Profile Header --- */
+.profile-header-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 40px;
 }
 
-/* === Result Header with Download Button === */
-.result-header {
+.avatar-circle-large {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+
+.profile-name-display {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+  text-align: center;
+}
+
+.profile-email-display {
+  color: var(--text-muted);
+  margin: 0;
+  text-align: center;
+}
+
+/* --- List Rows --- */
+.settings-list {
+  border-top: 1px solid var(--glass-border);
+}
+
+.settings-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #eee;
-  flex-wrap: wrap;
-  gap: 15px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--glass-border);
 }
 
-.result-header h2 {
-  font-size: 1.5rem;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.download-zip-btn {
-  background-color: #2e7d32;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-weight: 700;
+.settings-label-text {
+  color: var(--text-muted);
+  font-weight: 600;
   font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2);
 }
 
-.download-zip-btn:hover {
-  background-color: #1b5e20;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(46, 125, 50, 0.3);
+.settings-value-static {
+  color: var(--text-main);
+  font-weight: 700;
 }
 
-/* === Error === */
-.error-msg {
-  color: #d32f2f;
-  background: #ffebee;
+/* --- Fixing the Black Input Fields --- */
+.settings-input-inline {
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid transparent;
+  padding: 8px 12px;
   border-radius: 8px;
-  padding: 15px;
-  margin-top: 20px;
-  text-align: center;
-  width: 100%;
-  border: 1px solid #ef9a9a;
+  color: var(--text-main);
   font-weight: 600;
-}
-
-.questions-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.chart-wrapper {
-  background: white;
-  border-radius: 12px;
-  padding: 15px;
-  margin-top: 10px;
-}
-
-/* Ensuring text inside cards doesn't look squashed */
-.card-section h2 {
-  font-size: 1.3rem;
-  color: #222;
-}
-
-.card-section p {
-  margin: 2px 0;
-}
-
-/* Specific overrides for the Settings page */
-.settings-inline-input {
-  border: none !important;
-  background: transparent !important; /* This removes the dark blocks */
   text-align: right;
-  font-weight: 500;
-  color: #101828;
-  outline: none;
-  width: 50%;
-  font-size: 1rem;
-  padding: 0;
-  margin: 0;
-}
-
-.settings-inline-input:focus {
-  color: #0974b6; /* Highlighting the text you are editing */
-  box-shadow: none !important;
-}
-
-.settings-save-btn {
-  background: #ffffff;
-  border: 1px solid #D0D5DD;
-  border-radius: 30px;
-  padding: 12px 60px;
-  color: #D0D5DD; /* Light grey text like your screenshot */
-  font-weight: 600;
-  cursor: not-allowed;
-  transition: all 0.2s;
-}
-
-/* Optional: Make the button look "active" if you want to test it */
-.settings-save-btn:active {
-    background: #f9fafb;
-}
-
-/* Removes all bulky global input styles for the settings page */
-.clean-inline-input {
-  border: none !important;
-  background: transparent !important;
-  text-align: right;
-  font-weight: 500;
-  color: #101828;
-  outline: none;
+  transition: all 0.3s ease;
   width: 60%;
-  font-size: 1rem;
-  padding: 0 !important;
-  height: auto !important;
-  box-shadow: none !important;
 }
 
-/* The light-grey pill button from your screenshot */
-.settings-pill-btn {
-  background: #ffffff;
-  border: 1px solid #D0D5DD;
-  border-radius: 40px;
-  padding: 12px 80px;
-  color: #98A2B3; /* Light grey text */
-  font-weight: 500;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.settings-input-inline:focus {
+  outline: none;
+  background: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
 }
 
-.settings-pill-btn:hover {
-  background: #f9fafb;
-  border-color: #b0b5bd;
+.settings-input-inline:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* Ensure all values in the settings rows have identical sizing */
+.settings-input-inline, 
+.settings-value-static {
+  font-size: 0.9rem !important; /* Forces consistency */
+  font-weight: 600;
+  color: var(--text-main);
+  font-family: inherit;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* Reduced padding for the main glass card to keep it on one page */
+.settings-glass-card {
+  max-width: 550px; /* Slightly narrower for a tighter look */
+  margin: 0 auto;
 }

@@ -8,56 +8,64 @@ export default function Login() {
   const { login } = useContext(AuthContext);
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setIsLoading(true);
     try {
       await login(form.email, form.password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.detail || "Invalid credentials");
+      setError(err.response?.data?.detail || "Invalid email or password");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <img src={logo} alt="OBE Assess Logo" className="login-logo" />
-
-        <h2 className="login-title">OBE-Assess</h2>
-        <p className="login-subtitle">Sign in to your account</p>
+ <div className="login-page">
+  <div className="login-card">
+    <div className="login-header">
+      <img src={logo} alt="OBE-Assess" className="main-logo" />
+      <h1 className="brand-name">OBE-Assess</h1>
+      <p className="login-subtitle">AI Powered OBE Assessment System</p>
+    </div>
 
         <form onSubmit={handleSubmit} className="login-form">
-          <input
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) =>
-              setForm({ ...form, email: e.target.value })
-            }
-            required
-          />
+          <div className="input-group">
+            <label>Email Address</label>
+            <input
+              type="email"
+              placeholder="e.g. professor@university.edu"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+            />
+          </div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(e) =>
-              setForm({ ...form, password: e.target.value })
-            }
-            required
-          />
+          <div className="input-group">
+            <label>Password</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+            />
+          </div>
 
-          <button type="submit">Login</button>
+          <button type="submit" className="login-btn" disabled={isLoading}>
+            {isLoading ? "Signing in..." : "Sign In"}
+          </button>
         </form>
 
-        {error && <div className="login-error">{error}</div>}
+        {error && <div className="error-box">{error}</div>}
 
         <p className="login-footer">
-          Don’t have an account?{" "}
-          <span onClick={() => navigate("/register")}>Register</span>
+          Don’t have an account? <span onClick={() => navigate("/register")}>Register here</span>
         </p>
       </div>
     </div>

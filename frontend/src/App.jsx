@@ -15,6 +15,7 @@ import AssessmentAnalytics from "./pages/AssessmentAnalytics";
 import Settings from './pages/Settings';
 import CourseDetail from "./pages/CourseDetail";
 import CourseEnroll from "./pages/CourseEnroll"; 
+import AdminView from "./components/AdminView";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -35,6 +36,8 @@ function App() {
               {/* Default Index Route: Shows DashboardHome (Courses) */}
               <Route index element={<DashboardHome />} />
               
+              <Route path="admin" element={<AdminView />} />
+              
               {/* ✅ NEW: Route for creating assessment for a SPECIFIC COURSE */}
               {/* This matches the button in CourseDetail: /dashboard/courses/:id/create-assessment */}
               <Route path="courses/:courseId/create-assessment" element={<AssessmentCreate />} />
@@ -48,7 +51,7 @@ function App() {
               <Route path="enroll-course" element={<CourseEnroll />} />
               
               {/* Placeholders for future routes */}
-              <Route path="grading" element={<div>Grading Page Placeholder</div>} />
+              <Route path="grading" element={<AssessmentGrading />} />
               <Route path="analytics" element={<AssessmentAnalytics />} />
               <Route path="settings" element={<Settings />} />
               

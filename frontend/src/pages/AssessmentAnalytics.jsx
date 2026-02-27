@@ -2,6 +2,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
 import api from "../api/axios";
 import "../styles/AssessmentCreate.css"; 
+import "../styles/AssessmentGrading.css"; 
 
 const AssessmentAnalytics = () => {
   const [loading, setLoading] = useState(true);
@@ -41,8 +42,33 @@ const AssessmentAnalytics = () => {
     loadAnalytics();
   }, []);
 
-  if (loading) return <div className="assessment-container"><h1>Loading Analytics...</h1></div>;
-  if (error) return <div className="assessment-container"><h1>{error}</h1></div>;
+  // Styled Loading/Error State
+  if (loading || error) {
+    return (
+      <div className="assessment-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+        <div className="card-section settings-glass-card" style={{ textAlign: 'center', maxWidth: '500px' }}>
+          <div className="avatar-circle-large" style={{ margin: '0 auto 20px', background: 'rgba(99, 102, 241, 0.1)' }}>
+            {loading ? "📊" : "⚠️"}
+          </div>
+          <h2 className="profile-name-display" style={{ fontSize: '1.5rem', marginBottom: '10px' }}>
+            {loading ? "Generating Analytics..." : "Notice"}
+          </h2>
+          <p className="profile-email-display" style={{ fontSize: '1rem', lineHeight: '1.5' }}>
+            {error || "We are crunching the numbers for your Outcome-Based evaluation."}
+          </p>
+          {error && (
+             <button 
+              className="generate-btn" 
+              style={{ marginTop: '20px', width: 'auto', padding: '10px 30px' }}
+              onClick={() => window.location.href='grading'}
+            >
+              Go to Grading
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const cloData = cloChart.map((c, idx) => ({
     name: c.clo,
@@ -53,53 +79,64 @@ const AssessmentAnalytics = () => {
   }));
 
   return (
-    <div className="assessment-container" style={{ padding: '10px 20px', height: '100vh', overflow: 'hidden', justifyContent: 'flex-start' }}>
-      <h1 className="page-title" style={{ marginBottom: '10px', fontSize: '1.5rem' }}>Outcome-Based Analytics</h1>
+    <div className="assessment-container" style={{ padding: '20px 40px', height: '100vh', overflow: 'hidden', justifyContent: 'flex-start' }}>
+      <header className="page-header" style={{ marginBottom: '20px' }}>
+        <h1 className="page-title">Outcome-Based Analytics</h1>
+        <p className="page-subtitle">Visualizing CLO attainment and student performance metrics.</p>
+      </header>
 
-      <div className="assessment-form" style={{ maxWidth: '900px', height: 'calc(100% - 60px)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div className="card-section card-purple" style={{ flex: 1, minHeight: '0', padding: '12px' }}>
-          <label className="section-label">CLO Attainment (%)</label>
-          <ResponsiveContainer width="100%" height="90%">
-            <BarChart data={cloData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ccc" />
-              <XAxis dataKey="name" />
-              <YAxis unit="%" domain={[0, 100]} />
-              <Tooltip cursor={{fill: 'rgba(255,255,255,0.5)'}} />
-              <Bar dataKey="attainment" radius={[6, 6, 0, 0]} barSize={50}>
-                {cloData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+      <div className="assessment-form" style={{ maxWidth: '1000px', height: 'calc(100% - 120px)', background: 'transparent', padding: '0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flex: 1, minHeight: '0' }}>
+          {/* Chart 1 */}
+          <div className="card-section question-card-glass" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px' }}>
+            <label className="section-label" style={{ marginBottom: '15px' }}>CLO Attainment (%)</label>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={cloData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis unit="%" domain={[0, 100]} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
+                  cursor={{fill: 'rgba(99, 102, 241, 0.05)'}} 
+                />
+                <Bar dataKey="attainment" radius={[10, 10, 0, 0]} barSize={40}>
+                  {cloData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Chart 2 */}
+          <div className="card-section question-card-glass" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px' }}>
+            <label className="section-label" style={{ marginBottom: '15px' }}>Obtained vs Possible Marks</label>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={cloData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} />
+                <Bar name="Obtained" dataKey="obtained" fill="#7B61FF" radius={[6, 6, 0, 0]} barSize={25} />
+                <Bar name="Possible" dataKey="possible" fill="#E2E8F0" radius={[6, 6, 0, 0]} barSize={25} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="card-section card-green" style={{ flex: 1, minHeight: '0', padding: '12px' }}>
-          <label className="section-label">CLO Marks (Obtained vs Possible)</label>
-          <ResponsiveContainer width="100%" height="90%">
-            <BarChart data={cloData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" />
-              <YAxis label={{ value: 'Marks', angle: -90, position: 'insideLeft' }} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="obtained" fill="#1e7d20" radius={[4, 4, 0, 0]} barSize={28} />
-              <Bar dataKey="possible" fill="#7B61FF" radius={[4, 4, 0, 0]} barSize={28} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="action-bar-centered" style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="score-summary-badge" style={{ margin: 0 }}>
+            Cumulative Score: {totals.total_obtained} / {totals.total_possible}
+          </div>
+          <button className="generate-btn" style={{ width: '280px' }}>
+            Export PDF Report
+          </button>
         </div>
-
-        <div className="score-summary-badge" style={{ alignSelf: 'flex-end' }}>
-          Total: {totals.total_obtained} / {totals.total_possible}
-        </div>
-
-        <button className="generate-btn" style={{ marginTop: '5px', padding: '12px', fontSize: '1rem' }}>
-          Export Analytics Report (PDF)
-        </button>
       </div>
     </div>
   );
 };
 
 export default AssessmentAnalytics;
-

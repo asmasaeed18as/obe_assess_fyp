@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "../styles/AssessmentCreate.css"; 
+import "../styles/AssessmentGrading.css"; 
 
 const Settings = () => {
   const [profile, setProfile] = useState({
@@ -15,43 +16,36 @@ const Settings = () => {
   };
 
   return (
-    <div className="assessment-container" style={{ minHeight: '100vh', paddingBottom: '50px' }}>
-      
-      {/* Centered Heading - Matches AssessmentCreate.css exactly */}
-      <h1 className="page-title">Settings</h1>
-
-      <div className="assessment-form" style={{ maxWidth: '650px', background: '#fff', padding: '30px', borderRadius: '16px' }}>
-        
-        {/* Profile Header */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', marginBottom: '40px' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#F2F4F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>
-            👤
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600', color: '#101828' }}>{profile.name}</h2>
-            <p style={{ margin: 0, color: '#667085' }}>{profile.email}</p>
-          </div>
-        </div>
-
-        {/* Settings List */}
-        <div style={{ borderTop: '1px solid #EAECF0' }}>
-          <SettingRow label="Name" value={profile.name} onEdit={(v) => handleChange('name', v)} />
-          <SettingRow label="Email account" value={profile.email} onEdit={(v) => handleChange('email', v)} />
-          <SettingRow label="Mobile number" value={profile.mobile} onEdit={(v) => handleChange('mobile', v)} />
-          <SettingRow label="Location" value={profile.location} onEdit={(v) => handleChange('location', v)} />
-          <SettingRow label="Role" value={profile.role} isStatic={true} />
+    <div className="assessment-container" style={{ justifyContent: 'center', padding: '20px 80px' }}>
+      <div className="settings-wrapper" style={{ paddingTop: '0' }}>
+        <div className="card-section settings-glass-card" style={{ padding: '25px 40px !important' }}>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px 10px', borderBottom: '1px solid #EAECF0' }}>
-             <span style={{ color: '#344054', fontWeight: '500' }}>Courses</span>
-             <button style={{ background: 'none', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', color: '#000' }}>Edit</button>
+          {/* Compact Profile Header */}
+          <div className="profile-header-section" style={{ marginBottom: '20px' }}>
+            <div className="avatar-circle-large" style={{ width: '70px', height: '70px', fontSize: '30px' }}>
+              👤
+            </div>
+            <div className="profile-text">
+              <h2 className="profile-name-display" style={{ fontSize: '1.4rem' }}>{profile.name}</h2>
+              <p className="profile-email-display" style={{ fontSize: '0.9rem' }}>{profile.email}</p>
+            </div>
           </div>
-        </div>
 
-        {/* Save Button */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
-          <button className="settings-pill-btn">
-            Save Changes
-          </button>
+          {/* Settings List - Tightened Spacing */}
+          <div className="settings-list">
+            <SettingRow label="Name" value={profile.name} onEdit={(v) => handleChange('name', v)} />
+            <SettingRow label="Email Account" value={profile.email} onEdit={(v) => handleChange('email', v)} />
+            <SettingRow label="Mobile Number" value={profile.mobile} onEdit={(v) => handleChange('mobile', v)} />
+            <SettingRow label="Location" value={profile.location} onEdit={(v) => handleChange('location', v)} />
+            <SettingRow label="Role" value={profile.role} isStatic={true} />
+          </div>
+
+          {/* Centered Save Button */}
+          <div className="action-bar-centered" style={{ marginTop: '25px' }}>
+            <button className="generate-btn" style={{ padding: '12px 24px', width: '220px' }}>
+              Save Changes
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -59,16 +53,20 @@ const Settings = () => {
 };
 
 const SettingRow = ({ label, value, onEdit, isStatic = false }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 10px', borderBottom: '1px solid #EAECF0' }}>
-    <span style={{ color: '#667085', fontSize: '1rem' }}>{label}</span>
+  <div className="settings-row" style={{ padding: '12px 0' }}>
+    <span className="settings-label-text" style={{ fontSize: '0.85rem' }}>{label}</span>
     {isStatic ? (
-      <span style={{ color: '#101828', fontWeight: '500' }}>{value}</span>
+      /* Now using the same class as inputs to ensure identical font size/styling */
+      <span className="settings-input-inline" style={{ border: 'none', background: 'transparent', cursor: 'default' }}>
+        {value}
+      </span>
     ) : (
       <input 
         type="text" 
         value={value} 
         onChange={(e) => onEdit(e.target.value)}
-        className="clean-inline-input"
+        className="settings-input-inline"
+        style={{ fontSize: '0.9rem' }}
       />
     )}
   </div>

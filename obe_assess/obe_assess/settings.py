@@ -27,9 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'default-unsafe-key-for-dev')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG') == 'True'
+DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -90,9 +90,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'obe_db',
         'USER': 'postgres',
-        'PASSWORD': 'aima',
+        'PASSWORD': 'password',
         'HOST': '127.0.0.1',
-        'PORT': '5433',  # Must be 5433 based on your terminal test
+        'PORT': '5432',  # Must be 5433 based on your terminal test
     }
 }
 AUTH_USER_MODEL = 'users.User'  # point to our custom user model

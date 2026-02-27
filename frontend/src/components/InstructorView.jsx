@@ -1,57 +1,65 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { GraduationCap, Users } from "lucide-react";
 
 const InstructorView = ({ user, data }) => {
   const navigate = useNavigate();
   const courses = data?.courses || [];
 
   return (
-    <div className="view-container">
-      <header className="view-header">
-        <h1>Professor {user.last_name || user.first_name || ""}</h1>
-        <p>Your Active Classes</p>
+    <div className="instructor-content">
+      <header className="page-header">
+        <h1>Professor {user?.last_name || user?.username || ""}</h1>
+        <p className="subtitle">Welcome back to your AI Powered OBE Assessemnt System</p>
       </header>
 
-      <div className="course-grid">
-        {courses.map((course) => (
-          <div 
-            key={course.id} 
-            className="course-card instructor-card"
-            onClick={() => navigate(`/dashboard/courses/${course.course_id}`)}
-          >
-            <div className="status-stripe instructor-color"></div>
-            <div className="card-body">
-                <h4>{course.title}</h4>
-                <div className="meta-row">
-                    <span className="course-code">{course.code}</span>
-                    <span className="badge">{course.section_name}</span>
+      <section className="dashboard-content">
+        <div className="section-header">
+           <h2 className="section-title">Your Active Classes</h2>
+           {/* Removed New Course Button as per request */}
+        </div>
+        
+        <div className="course-grid">
+          {courses.length > 0 ? (
+            courses.map((course) => (
+              <div 
+                key={course.course_id} 
+                className="glass-card course-card"
+                onClick={() => navigate(`/dashboard/courses/${course.course_id}`)}
+              >
+                <div className="card-icon-header">
+                   <GraduationCap size={22} color="#6366f1" />
                 </div>
+                <h3>{course.title}</h3>
+                <p className="course-code-text">{course.code} • {course.section_name}</p>
                 
-                {/* ✅ NEW: Enrollment Code Display */}
-                <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>Enroll Code:</span>
-                    <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 'bold', color: '#2563eb', letterSpacing: '2px' }}>
-                        {course.enrollment_code || "N/A"}
-                    </span>
+                <div className="enrollment-tag">
+                  <small>ENROLL CODE</small>
+                  <code>{course.enrollment_code || "N/A"}</code>
                 </div>
-                
-                <div className="instructor-actions" style={{ marginTop: '15px' }}>
-                    <div className="stat">👥 {course.students_count} Students</div>
-                    
-                    <button 
-                        className="btn-sm"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/dashboard/courses/${course.course_id}/create-assessment`);
-                        }}
-                    >
-                        + Assessment
-                    </button>
+
+                <div className="card-footer-stats">
+                  <span className="stat-label"><Users size={14}/> {course.students_count} Students</span>
+                  <button 
+                    className="action-pill"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/dashboard/courses/${course.course_id}/create-assessment`);
+                    }}
+                  >
+                    + Assessment
+                  </button>
                 </div>
+              </div>
+            ))
+          ) : (
+            <div className="empty-state-glass">
+              <div className="empty-icon">📂</div>
+              <p>No assigned courses found. Please contact your administrator.</p>
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 };
