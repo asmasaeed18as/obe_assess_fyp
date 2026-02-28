@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap');
 
 :root {
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --accent: #a855f7; 
+  --primary: #8B61A1;
+  --primary-hover: #9a73af;
+  --accent: #a07ab6; 
 }
 
 /* PAGE CONTAINER */
@@ -79,7 +79,7 @@
   outline: none;
   background: #ffffff !important;
   border-color: var(--primary) !important;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12);
 }
 
 
@@ -101,7 +101,7 @@
 
 .auth-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);
 }
 
 /* FOOTER */

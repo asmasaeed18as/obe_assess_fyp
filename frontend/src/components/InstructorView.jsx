@@ -28,7 +28,7 @@ const InstructorView = ({ user, data }) => {
                 onClick={() => navigate(`/dashboard/courses/${course.course_id}`)}
               >
                 <div className="card-icon-header">
-                   <GraduationCap size={22} color="#6366f1" />
+                   <GraduationCap size={22} color="var(--primary)" />
                 </div>
                 <h3>{course.title}</h3>
                 <p className="course-code-text">{course.code} • {course.section_name}</p>

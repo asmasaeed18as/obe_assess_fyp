@@ -14,6 +14,7 @@ const InstructorCourseDetail = () => {
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [editingCloId, setEditingCloId] = useState(null);
   const [editFormData, setEditFormData] = useState({ text: "", bloom_level: "" });
 
@@ -42,15 +43,20 @@ const InstructorCourseDetail = () => {
     const formData = new FormData();
     formData.append("file", file);
     setUploading(true);
+    setUploadError("");
     try {
       const res = await api.post(`/courses/${id}/upload-outline/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setClos(res.data.clos);
-    } catch {
-      alert("Failed to upload outline.");
+    } catch (err) {
+      const message = err?.response?.data?.error || err?.message || "Failed to upload outline.";
+      setUploadError(message);
     } finally {
       setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -90,13 +96,20 @@ const InstructorCourseDetail = () => {
           <h3 className="section-subtitle">Learning Outcomes</h3>
                   <div className="header-action-row">
           <div className="header-button-container">
-          <button className="action-pill" onClick={() => fileInputRef.current.click()}>
-        Upload Outline
+          <button className="action-pill" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+            {uploading ? "Uploading..." : "Upload Outline"}
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileUpload}
+            style={{ display: "none" }}
+          />
           </div>
         </div>
         </div>
 
+        {uploadError && <div className="error-msg">{uploadError}</div>}
         <div className="clo-list">
           {clos.length > 0 ? (
             clos.map((clo) => (

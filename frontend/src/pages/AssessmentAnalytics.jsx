@@ -14,7 +14,18 @@ const AssessmentAnalytics = () => {
 
   useEffect(() => {
     const loadAnalytics = async () => {
-      const submissionId = localStorage.getItem("grading_submission_id");
+      const storedIds = localStorage.getItem("grading_submission_ids");
+      let submissionId = localStorage.getItem("grading_submission_id");
+      if (storedIds) {
+        try {
+          const ids = JSON.parse(storedIds);
+          if (Array.isArray(ids) && ids.length > 0) {
+            submissionId = ids[ids.length - 1];
+          }
+        } catch (e) {
+          // ignore parse error and fallback to single id
+        }
+      }
       if (!submissionId) {
         setError("No graded submission found. Please grade an assessment first.");
         setLoading(false);
@@ -23,7 +34,9 @@ const AssessmentAnalytics = () => {
 
       try {
         setLoading(true);
-        const res = await api.get(`/analytics/submission/${submissionId}/clo/`);
+        const res = storedIds
+          ? await api.post(`/analytics/submissions/clo/`, { submission_ids: JSON.parse(storedIds) })
+          : await api.get(`/analytics/submission/${submissionId}/clo/`);
         const data = res?.data || {};
         const chart = Array.isArray(data.clo_chart) ? data.clo_chart : [];
         setCloChart(chart);
@@ -47,7 +60,7 @@ const AssessmentAnalytics = () => {
     return (
       <div className="assessment-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
         <div className="card-section settings-glass-card" style={{ textAlign: 'center', maxWidth: '500px' }}>
-          <div className="avatar-circle-large" style={{ margin: '0 auto 20px', background: 'rgba(99, 102, 241, 0.1)' }}>
+          <div className="avatar-circle-large" style={{ margin: '0 auto 20px', background: 'rgba(var(--primary-rgb), 0.1)' }}>
             {loading ? "📊" : "⚠️"}
           </div>
           <h2 className="profile-name-display" style={{ fontSize: '1.5rem', marginBottom: '10px' }}>
@@ -98,7 +111,7 @@ const AssessmentAnalytics = () => {
                 <YAxis unit="%" domain={[0, 100]} axisLine={false} tickLine={false} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
-                  cursor={{fill: 'rgba(99, 102, 241, 0.05)'}} 
+                  cursor={{fill: 'rgba(var(--primary-rgb), 0.05)'}} 
                 />
                 <Bar dataKey="attainment" radius={[10, 10, 0, 0]} barSize={40}>
                   {cloData.map((entry, index) => (

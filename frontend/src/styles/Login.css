@@ -1,10 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap');
 
 :root {
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  /* These colors pull from your logo's purple/indigo tones */
-  --accent: #a855f7; 
+  --primary: #8B61A1;
+  --primary-hover: #9a73af;
+  --accent: #a07ab6;
 }
 
 .login-page {
@@ -92,7 +91,7 @@
   outline: none;
   background: #ffffff !important; /* Pops on focus */
   border-color: var(--primary) !important;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12);
 }
 
 .login-btn {
@@ -111,7 +110,7 @@
 
 .login-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.3);
 }
 
 .login-footer {

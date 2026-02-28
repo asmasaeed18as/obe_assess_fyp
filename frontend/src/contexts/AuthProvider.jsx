@@ -39,7 +39,7 @@ export function AuthProvider({ children }) {
 
   // UPDATE PROFILE
   const updateProfile = async (data) => {
-    const res = await api.put("/users/profile/", data);
+    const res = await api.put("/users/me/", data);
     return res.data;
   };
 

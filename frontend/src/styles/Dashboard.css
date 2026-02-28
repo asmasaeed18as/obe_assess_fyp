@@ -1,8 +1,9 @@
 /* --- Root Variables & Reset --- */
 :root {
-  --primary: #6366f1;
-  --primary-dark: #4338ca;
-  --accent: #22d3ee;
+  --primary: #8B61A1;
+  --primary-dark: #6f4c84;
+  --accent: #a07ab6;
+  --primary-rgb: 139, 97, 161;
   --glass-bg: rgba(255, 255, 255, 0.4);
   --glass-border: rgba(255, 255, 255, 0.5);
   --text-main: #1e293b;
@@ -89,7 +90,7 @@ body {
 .menu-item.active {
   background: white;
   color: var(--primary);
-  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.12);
   border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
@@ -129,9 +130,9 @@ body {
   width: 100%;
   padding: 12px;
   border-radius: 14px;
-  border: 1px solid #fee2e2;
-  background: rgba(254, 226, 226, 0.4);
-  color: #dc2626;
+  border: 1px solid rgba(var(--primary-rgb), 0.25);
+  background: var(--primary);
+  color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -141,7 +142,7 @@ body {
   transition: 0.2s;
 }
 
-.logout-btn:hover { background: #fee2e2; }
+.logout-btn:hover { background: var(--primary-dark); }
 
 /* --- Main Content Area --- */
 .main-viewport {
@@ -385,7 +386,7 @@ body {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);
 }
 
 /* Enroll Card Action Area */
@@ -398,7 +399,7 @@ body {
 }
 
 .join-btn {
-  background: #10b981; /* Green success color */
+  background: var(--primary);
   color: white;
   border: none;
   padding: 0 20px;
@@ -409,7 +410,7 @@ body {
 }
 
 .join-btn:hover {
-  background: #059669;
+  background: var(--primary-dark);
   transform: translateY(-2px);
 }
 
@@ -498,7 +499,7 @@ body {
 
 .tab-pill:hover {
   border-color: var(--primary);
-  background: rgba(59, 130, 246, 0.04);
+  background: rgba(var(--primary-rgb), 0.04);
 }
 
 /* High-contrast Active State */
@@ -506,7 +507,7 @@ body {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 
 /* Container for the Admin-specific tools */

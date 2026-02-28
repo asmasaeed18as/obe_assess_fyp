@@ -2,6 +2,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthProvider";
+import { GradingProvider } from "./contexts/GradingContext";
 
 // Import Pages
 import Login from "./pages/Login";
@@ -22,7 +23,8 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
+        <GradingProvider>
+          <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -65,7 +67,8 @@ function App() {
           
           {/* Fallback */}
           <Route path="*" element={<div>Page not found</div>} />
-        </Routes>
+          </Routes>
+        </GradingProvider>
       </AuthProvider>
     </BrowserRouter>
   );

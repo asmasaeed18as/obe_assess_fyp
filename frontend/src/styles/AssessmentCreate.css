@@ -81,7 +81,7 @@
   outline: none;
   background: white;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12);
 }
 
 .grid-row {
@@ -173,13 +173,13 @@
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.2);
   transition: all 0.3s ease;
 }
 
 .generate-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 15px 30px rgba(var(--primary-rgb), 0.3);
   filter: brightness(1.1);
 }
 
@@ -275,7 +275,7 @@
   outline: none;
   background: white;
   border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.12);
 }
 
 .settings-input-inline:hover {
