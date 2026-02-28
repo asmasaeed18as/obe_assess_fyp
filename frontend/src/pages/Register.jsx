@@ -10,7 +10,7 @@ export default function Register() {
     email: "",
     username: "",
     password: "",
-    role: "instructor",
+    role: "",
   });
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -27,72 +27,76 @@ export default function Register() {
   };
 
   return (
-    /* Force the page to be exactly the height of the screen */
-    <div className="auth-page" style={{ height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="auth-card" style={{ padding: '20px', width: '100%', maxWidth: '400px' }}>
-        
-        {/* Shrink logo and margins */}
-        <img src={logo} alt="OBE Assess Logo" className="auth-logo" style={{ height: '50px', marginBottom: '10px' }} />
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-header">
+          <img src={logo} alt="OBE Assess Logo" className="auth-logo" />
+          <h2 className="auth-title">Create Account</h2>
+          <p className="auth-subtitle">OBE-Assess Platform</p>
+        </div>
 
-        <h2 className="auth-title" style={{ margin: '0 0 5px 0', fontSize: '1.5rem' }}>Create Account</h2>
-        <p className="auth-subtitle" style={{ marginBottom: '15px' }}>OBE Assessment System</p>
-
-        <form className="auth-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
+          {/* Field 1: Email Address */}
           <input
             type="email"
-            placeholder="Email"
+            name="register_email"
+            placeholder="Email Address"
             className="input-field"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             required
-            style={{ padding: '10px' }}
           />
 
+          {/* Field 2: Username */}
           <input
             type="text"
+            name="register_username"
             placeholder="Username"
             className="input-field"
+            autoComplete="off"
             value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
             required
-            style={{ padding: '10px' }}
           />
 
+          {/* Field 3: Role Dropdown */}
           <select
+            name="register_role"
             className="input-field"
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
-            style={{ padding: '10px', background: '#fff' }}
           >
+            <option value="" disabled hidden>Role</option>
             <option value="instructor">Instructor</option>
             <option value="student">Student</option>
             <option value="qa">QA</option>
           </select>
 
+          {/* Field 4: Password */}
           <input
             type="password"
+            name="register_password"
             placeholder="Password"
             className="input-field"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required
-            style={{ padding: '10px' }}
           />
 
-          <button type="submit" className="auth-btn" style={{ padding: '12px', marginTop: '5px' }}>
-            Register
+          <button type="submit" className="auth-btn">
+            Create Account
           </button>
         </form>
 
         {error && (
-          <div className="auth-error" style={{ fontSize: '0.8rem', marginTop: '10px', maxHeight: '40px', overflow: 'hidden' }}>
+          <div className="auth-error">
             {typeof error === 'string' ? error : "Registration failed"}
           </div>
         )}
 
-        <p className="auth-footer" style={{ marginTop: '15px', fontSize: '0.9rem' }}>
+        <p className="auth-footer">
           Already have an account?{" "}
-          <span onClick={() => navigate("/login")} style={{ cursor: 'pointer', fontWeight: 'bold' }}>Login</span>
+          <span onClick={() => navigate("/login")}>Login</span>
         </p>
       </div>
     </div>

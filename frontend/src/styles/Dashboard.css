@@ -1,761 +1,532 @@
+/* --- Root Variables & Reset --- */
 :root {
-  --primary: #5b5fc7;
-  --accent: #2ec4b6;
-  --bg: #f7f8fc;
-  --card: #ffffff;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --border: #e5e7eb;
+  --primary: #8B61A1;
+  --primary-dark: #6f4c84;
+  --accent: #a07ab6;
+  --primary-rgb: 139, 97, 161;
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --bg-gradient: radial-gradient(circle at top right, #fdfbff, #ebedff);
 }
 
-/* Layout: Fix height to viewport and stop body scroll */
-.dashboard {
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-main);
+  background: var(--bg-gradient);
+}
+
+/* --- Main Layout Container --- */
+.dashboard-container {
   display: flex;
   height: 100vh;
-  background: var(--bg);
-  overflow: hidden; 
+  width: 100vw;
+  overflow: hidden; /* Prevents double scrollbars */
 }
 
-/* Sidebar: Fixed width, flexible vertical content */
-.sidebar {
-  width: 260px;
-  background: white;
-  padding: 24px;
-  border-right: 1px solid var(--border);
-  flex-shrink: 0;
+/* --- Unified Glass Sidebar --- */
+.glass-sidebar {
+  width: 280px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
+  padding: 40px 24px;
+  z-index: 100;
 }
 
-.logo {
-  font-weight: 700;
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
+  padding-left: 10px;
+}
+
+.brand-name {
+  font-weight: 800;
+  color: var(--primary-dark);
+  font-size: 1.2rem;
+  letter-spacing: -0.5px;
+}
+
+/* --- Sidebar Navigation --- */
+.sidebar-menu {
+  flex: 1;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.4);
   color: var(--primary);
-  margin-bottom: 32px;
-  font-size: 1.5rem;
 }
 
-.sidebar-nav {
+.menu-item.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* --- Sidebar Footer & Logout --- */
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.user-card-mini {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 18px;
+  margin-bottom: 12px;
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  color: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.u-name { font-weight: 600; font-size: 0.9rem; margin: 0; }
+.u-role { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
+
+.logout-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--primary-rgb), 0.25);
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.logout-btn:hover { background: var(--primary-dark); }
+
+/* --- Main Content Area --- */
+.main-viewport {
+  flex: 1;
+  padding: 60px 80px;
+  overflow-y: auto;
+  background: transparent;
+}
+
+.page-header { margin-bottom: 48px; }
+
+.page-header h1 {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -1px;
+}
+
+.subtitle { color: var(--text-muted); font-size: 1.1rem; margin-top: 4px; }
+
+/* --- Course Grid & Cards --- */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 32px;
+  padding: 30px;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+}
+
+.glass-card:hover {
+  transform: translateY(-8px);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+}
+
+.card-icon-header {
+  width: 48px;
+  height: 48px;
+  background: white;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+}
+
+.course-card h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 6px; }
+.course-code-text { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 20px; }
+
+.enrollment-tag {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.enrollment-tag small { color: var(--text-muted); font-weight: 600; font-size: 0.7rem; }
+.enrollment-tag code { color: var(--primary-dark); font-weight: 800; }
+
+.card-footer-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+.stat-label { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+
+.action-pill {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.action-pill:hover { background: var(--primary-dark); transform: scale(1.05); }
+
+/* --- Empty States --- */
+.empty-state-glass {
+  grid-column: 1 / -1;
+  padding: 80px;
+  text-align: center;
+  background: var(--glass-bg);
+  border-radius: 32px;
+  border: 1px dashed var(--glass-border);
+  color: var(--text-muted);
+}
+
+.page-section-container {
+  margin-bottom: 40px; /* Adjust this value (e.g., 32px) for more space */
+  display: flex;
+  width: 100%;
+}
+
+/* Ensure the stacked header doesn't squash the elements */
+.section-header.stacked {
+  gap: 12px; /* Space between the text and the button */
+  margin-bottom: 0; /* Let the button container handle the bottom spacing */
+}
+
+/* --- Student Card Specifics --- */
+.student-clickable-card {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtly change the background on hover to show interactivity */
+.student-clickable-card:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: var(--primary);
+}
+
+.student-clickable-card .arrow-icon {
+  color: var(--primary);
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+.student-clickable-card:hover .arrow-icon {
+  transform: translateX(5px);
+}
+
+/* --- Empty State Refinement --- */
+.empty-state-glass .empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* Ensure the grid matches the Instructor view's spacing */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
+  margin-top: 10px; /* Space created by header-button-container */
+}
+
+/* Sets the space between the header/button and the course cards */
+.header-button-container {
+  margin-bottom: 32px; 
+  display: flex;
+  width: 100%;
+}
+
+/* Stacks the text and button vertically */
+.section-header.stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px; /* Space between "enrolled in 1 course" and the button */
+}
+
+/* Subtitle styling to match your Student Welcome screen */
+.subtitle {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+/* Container for Dept/Program Selects */
+.filters-container-row {
+  display: flex;
+  gap: 24px;
+  padding: 10px;
+}
+
+.filter-input-group {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-/* Nav Item (NavLink) */
-.nav-item {
-  display: block;
-  width: 100%;
-  text-decoration: none;
-  text-align: left;
-  padding: 12px 16px;
-  border-radius: 10px;
-  font-size: 14px;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.2s;
-  font-weight: 500;
-  background: transparent;
-  border: none;
-}
-
-.nav-item:hover {
-  background: #f3f4f6;
-  color: var(--text);
-}
-
-.nav-item.active {
-  background: #eef2ff;
+.filter-input-group label {
+  font-weight: 600;
+  font-size: 0.85rem;
   color: var(--primary);
-  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Main: Occupy remaining space and ALLOW SCROLLING */
-.dashboard-main {
-  flex: 1;
-  padding: 32px;
-  overflow-y: auto; /* Internal scrollbar */
-  height: 100%;
+/* Glass Themed Inputs */
+.glass-select, .glass-input-small {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 12px;
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+  color: #1a202c;
+  outline: none;
+  transition: all 0.3s ease;
 }
 
-/* Profile */
-.profile-card {
-  background: var(--card);
-  border-radius: 16px;
-  padding: 24px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 32px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-}
-
-.profile-avatar {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  border: 4px solid var(--accent);
-  background-color: #eee;
-}
-
-.profile-name {
-  font-weight: 600;
-  color: var(--text);
-  margin: 0 0 4px 0;
-}
-
-.profile-role {
-  font-size: 14px;
-  color: var(--muted);
-  margin: 0;
-}
-
-/* Courses */
-.section-title {
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: var(--text);
-}
-
-.course-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 24px;
-}
-
-.course-card {
-  background: var(--card);
-  border-radius: 16px;
-  padding: 20px;
-  cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-}
-
-.course-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-  border-color: #eef2ff;
-}
-
-.course-title {
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--text);
-}
-
-.course-meta {
-  display: flex;
-  gap: 16px;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-/* Add Course Button */
-.add-course {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40px;
-  font-weight: 300;
-  color: var(--primary);
-  border: 2px dashed var(--border);
-  box-shadow: none;
-  background: transparent;
-}
-
-.add-course:hover {
+.glass-select:focus {
   border-color: var(--primary);
-  background: #f9fafb;
-  transform: translateY(-2px);
-}
-
-/* =========================================
-   NEW STYLES FOR DETAIL & ENROLL PAGES
-   ========================================= */
-
-/* Animations */
-.fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- Course Detail Page --- */
-.course-detail-container {
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.course-header-card {
   background: white;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+/* Batch Tabs */
+.tabs-flex-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
-  gap: 20px;
+  gap: 12px;
+  margin-bottom: 32px;
+  overflow-x: auto;
+  padding-bottom: 8px;
 }
 
-.header-left { flex: 1; }
-
-.course-page-title {
-  font-size: 1.8rem;
-  margin: 0 0 10px 0;
-  color: #1f2937;
+.tab-pill {
+  white-space: nowrap;
+  padding: 10px 24px;
+  border-radius: 50px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
 }
 
-.course-tags {
+.tab-pill.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);
+}
+
+/* Enroll Card Action Area */
+.enroll-action-box {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed rgba(0,0,0,0.1);
   display: flex;
   gap: 10px;
 }
 
-.tag-badge {
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.tag-badge.blue { background: #e0f2fe; color: #0284c7; }
-.tag-badge.purple { background: #f3e8ff; color: #9333ea; }
-
-.header-right {
-  display: flex;
-  gap: 15px;
-}
-
-.action-btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-}
-
-.outline-btn { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
-.outline-btn:hover { background: #d1fae5; transform: translateY(-1px); }
-
-.edit-btn { background: #f3f4f6; color: #374151; }
-.edit-btn:hover { background: #e5e7eb; transform: translateY(-1px); }
-
-/* Assessments List Section */
-.section-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.section-subtitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.create-new-btn {
+.join-btn {
   background: var(--primary);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background 0.2s;
-}
-.create-new-btn:hover { background: #4a4eb0; }
-
-.assessment-cards-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.assessment-mini-card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-  border: 1px solid #f3f4f6;
-  transition: transform 0.2s;
-}
-
-.assessment-mini-card:hover {
-  transform: translateX(5px);
-  border-color: #e5e7eb;
-}
-
-.assess-icon {
-  font-size: 1.5rem;
-  background: #f9fafb;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0 20px;
   border-radius: 10px;
-}
-
-.assess-info h4 { margin: 0 0 5px 0; font-size: 1rem; color: #333; }
-.assess-date { font-size: 0.85rem; color: #6b7280; }
-
-.assess-type-badge {
-  margin-left: auto;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.assess-type-badge.quiz { background: #fff7ed; color: #c2410c; }
-.assess-type-badge.exam { background: #eff6ff; color: #1d4ed8; }
-
-.empty-state-card {
-  text-align: center;
-  padding: 40px;
-  background: white;
-  border-radius: 12px;
-  color: #6b7280;
-  border: 1px dashed #e5e7eb;
-}
-
-.empty-state-card button {
-  margin-top: 10px;
-  background: none;
-  border: 1px solid var(--primary);
-  color: var(--primary);
-  padding: 8px 16px;
+  font-weight: bold;
   cursor: pointer;
+  transition: 0.2s;
 }
 
-/* --- Enrollment Page --- */
-.course-enroll-container {
-  max-width: 1000px;
-  margin: 0 auto;
+.join-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
 }
 
-.page-heading { font-size: 1.8rem; margin-bottom: 5px; color: #111827; }
-.page-subheading { color: #6b7280; margin-top: 0; margin-bottom: 30px; }
-
-.enroll-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+/* Space between Selection Area and the Semester results */
+.batch-selection-area {
+  margin-bottom: 48px; /* High margin for breathing room */
 }
 
+/* Semester Title Styling */
+.semester-header-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.semester-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1a202c;
+  white-space: nowrap;
+}
+
+.semester-divider {
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary) 0%, rgba(255,255,255,0) 100%);
+  width: 100%;
+  opacity: 0.3;
+}
+
+/* Fixes for the Enroll Card layout */
 .enroll-card {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.enroll-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-}
-
-.enroll-card-header {
-  display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  min-height: 280px; /* Ensures all cards match height */
 }
 
-.enroll-card-header h3 { margin: 0; font-size: 1.1rem; color: #1f2937; }
-
-.course-code-badge {
-  background: #f3f4f6;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #4b5563;
+.enroll-card-body h3 {
+  margin: 12px 0;
+  font-size: 1.25rem;
 }
 
 .enroll-details p {
-  margin: 5px 0;
   font-size: 0.9rem;
-  color: #6b7280;
+  color: var(--text-muted);
+  line-height: 1.6;
 }
 
-.enroll-btn-action {
-  margin-top: auto;
-  background: var(--accent);
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 600;
+.enroll-details span {
+  font-weight: 700;
+  color: #4a5568;
+}
+
+/* Container spacing to separate the filters from the batch buttons */
+.batch-selection-area {
+  margin-top: 40px; /* Space above 'Select Your Batch' */
+  margin-bottom: 48px; /* Space below batch buttons and course results */
+}
+
+/* Label spacing */
+.section-label {
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px; /* Space between label and the buttons */
+  display: block;
+}
+
+/* Fix for blending: Give unselected tabs a subtle border and shadow */
+.tab-pill {
+  white-space: nowrap;
+  padding: 10px 24px;
+  border-radius: 50px;
+  /* Changed from transparent/white to a light grey border to prevent blending */
+  border: 1.5px solid rgba(0, 0, 0, 0.08); 
+  background: white; 
+  color: #4a5568;
   cursor: pointer;
-  transition: background 0.2s;
-  text-align: center;
-}
-
-.enroll-btn-action:hover { background: #25a094; }
-
-/* =========================================
-   CLO LIST & EDITING STYLES
-   ========================================= */
-
-/* Main Container for CLO List */
-.clo-list-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 20px;
-}
-
-/* Individual CLO Row (Card) */
-.clo-item-row {
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 20px;
-  border-radius: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.2s ease;
+  font-weight: 600;
+  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-.clo-item-row:hover {
+.tab-pill:hover {
   border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(91, 95, 199, 0.1);
-  transform: translateY(-2px);
+  background: rgba(var(--primary-rgb), 0.04);
 }
 
-/* --- View Mode Styles --- */
-.clo-content {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  flex: 1;
-  padding-right: 20px;
-}
-
-.clo-code {
-  font-weight: 700;
-  color: var(--primary);
-  background: #eef2ff; /* Light Primary BG */
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  letter-spacing: 0.5px;
-}
-
-.clo-text {
-  margin: 0;
-  color: var(--text);
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.clo-meta {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-shrink: 0;
-}
-
-.bloom-badge {
-  background: #fff7ed; /* Light Orange */
-  color: #c2410c;       /* Dark Orange */
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  border: 1px solid #ffedd5;
-  text-transform: uppercase;
-}
-
-.edit-icon-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 1.1rem;
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.edit-icon-btn:hover {
-  color: var(--primary);
-  background: #f3f4f6;
-  border-color: #e5e7eb;
-}
-
-/* --- Edit Mode Styles (Form) --- */
-.clo-edit-form {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-  align-items: center;
-  background: #f9fafb;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.edit-input-text {
-  flex: 1;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.edit-input-text:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(91, 95, 199, 0.1);
-}
-
-.edit-select-bloom {
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: white;
-  font-size: 0.9rem;
-  color: var(--text);
-  outline: none;
-  cursor: pointer;
-}
-
-.edit-select-bloom:focus {
-  border-color: var(--primary);
-}
-
-/* Save/Cancel Buttons */
-.save-btn {
-  background: var(--accent); /* Teal */
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background 0.2s;
-}
-
-.save-btn:hover {
-  background: #25a094; /* Darker Teal */
-}
-
-.cancel-btn {
-  background: transparent;
-  color: #ef4444; /* Red */
-  border: 1px solid #fee2e2;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancel-btn:hover {
-  background: #fef2f2;
-  border-color: #fca5a5;
-}
-
-/* =========================================
-   NEW: Assessments Section (Course Detail)
-   ========================================= */
-
-/* --- Header Row (Title + Button) --- */
-.section-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  margin-top: 20px;
-}
-
-/* --- The "+ Create Assessment" Button --- */
-.create-new-btn {
-  background-color: #5b5fc7; /* Your Brand Purple */
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease;
-}
-
-.create-new-btn:hover {
-  background-color: #4347a8; /* Darker purple on hover */
-}
-
-/* --- Assessment List Container --- */
-.assessment-grid-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* --- Individual Assessment Card --- */
-.assessment-item-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background-color: white;
-  border-radius: 8px;
-  border-left: 5px solid #6366f1; /* Purple accent strip */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.assessment-item-card:hover {
-  transform: translateX(5px); /* Subtle slide animation */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* --- Left Side of Card (Badge + Date) --- */
-.assess-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.assess-date {
-  font-weight: 600;
-  color: #374151; /* Dark Gray */
-  font-size: 0.95rem;
-}
-
-/* --- Right Side of Card (Download Button) --- */
-.assess-actions .action-btn {
-  font-size: 0.85rem;
-  padding: 6px 12px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-/* Add this to the bottom of Dashboard.css */
-
-/* Container for PLO badges next to CLO code */
-.plo-tags-list {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-/* The PLO Badge itself */
-.plo-badge {
-  background-color: #d1fae5; /* Light Green */
-  color: #065f46;            /* Dark Green Text */
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 12px;
-  border: 1px solid #a7f3d0;
-  letter-spacing: 0.5px;
-}
-
-/* Optional: Color code the Bloom Badges */
-.bloom-badge.c { background: #fff7ed; color: #c2410c; border-color:#ffedd5; } /* Orange */
-.bloom-badge.p { background: #fdf4ff; color: #86198f; border-color:#f0abfc; } /* Purple */
-.bloom-badge.a { background: #eff6ff; color: #1e40af; border-color:#bfdbfe; } /* Blue */
-
-
-
-/* =======================================
-   SIDEBAR FOOTER - HORIZONTAL ALIGNMENT FIX*/
-.sidebar-footer {
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center; /* Vertical center alignment */
-  justify-content: space-between; /* Pushes profile left and button right */
-  gap: 10px;
-}
-
-.user-profile-small {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0; /* Prevents flex children from overflowing */
-}
-
-.user-avatar-mini {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: var(--primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.user-details-mini {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* Important for long emails */
-}
-
-.user-name-mini {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-email-mini {
-  font-size: 11px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.logout-btn {
-  padding: 8px;
-  background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
-  border-radius: 1px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.logout-btn:hover {
+/* High-contrast Active State */
+.tab-pill.active {
   background: var(--primary);
   color: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+}
+
+/* Container for the Admin-specific tools */
+.admin-content-wrapper {
+  margin-top: 32px; /* Creates the gap between header and the management tools */
+}
+
+/* Ensure AdminManager headers don't conflict with main page headers */
+.admin-content-wrapper h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* If AdminManager uses glass cards, ensure they have proper spacing */
+.admin-content-wrapper .glass-card {
+  margin-bottom: 24px;
+  padding: 30px;
 }

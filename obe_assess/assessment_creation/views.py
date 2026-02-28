@@ -12,7 +12,7 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 
 from .models import LectureMaterial, Assessment
-from course_management.models import Course  # ✅ Import Course to link assessment
+from course_management.models import Course, CourseSection  # ✅ Import Course to link assessment
 from .serializers import AssessmentSerializer
 from .utils import (
     extract_text_from_pdf_filefield, 
@@ -221,3 +221,15 @@ class CourseAssessmentListView(generics.ListAPIView):
         course_id = self.kwargs['course_id']
         # Return assessments for this course, newest first
         return Assessment.objects.filter(course_id=course_id).order_by('-created_at')
+
+class SectionAssessmentListView(generics.ListAPIView):
+    """
+    Returns a list of assessments for a course using CourseSection UUID.
+    """
+    serializer_class = AssessmentSerializer
+    permission_classes = [IsAuthenticated, IsInstructor]
+
+    def get_queryset(self):
+        section_id = self.kwargs['section_id']
+        section = get_object_or_404(CourseSection, id=section_id)
+        return Assessment.objects.filter(course=section.course).order_by('-created_at')

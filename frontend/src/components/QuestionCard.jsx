@@ -1,26 +1,17 @@
 import React from "react";
+import { FileText, CheckCircle } from "lucide-react";
 
 const QuestionCard = ({ q, idx }) => {
-  // Safe access to meta data
   const bloom = q.meta?.bloom || q.bloomLevel || "N/A";
   const clo = q.meta?.clo || "";
 
   return (
-    <div className="bg-[#fefaf3] border border-[#e0c9a6] rounded-2xl p-6 mb-6 shadow-md hover:shadow-lg transition-all duration-300">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold text-[#5b4636]">
-          Question {idx + 1}
-        </h3>
-        <div className="flex gap-2 items-center">
-          {/* Marks Badge */}
-          <span className="text-xs px-2 py-1 bg-[#8d6e63] text-white rounded-md font-semibold">
-            {q.marks || q.weightage} Marks
-          </span>
-          {/* Bloom Badge */}
-          <span className="text-xs px-3 py-1 bg-[#d4a373] text-white rounded-full font-semibold shadow-sm">
-            {bloom} {clo ? `| ${clo}` : ""}
-          </span>
+    <div className="glass-result-card">
+      <div className="card-top-row">
+        <div className="q-number-pill">Question {idx + 1}</div>
+        <div className="tags-group">
+          <span className="badge-outline">{bloom}</span>
+          <span className="badge-primary">{q.marks || q.weightage} Marks</span>
         </div>
       </div>
 

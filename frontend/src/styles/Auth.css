@@ -1,99 +1,152 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap');
+
 :root {
-  --primary: #5b5fc7;
-  --bg: #f7f8fc;
-  --card: #ffffff;
-  --muted: #6b7280;
-  --border: #e5e7eb;
+  --primary: #8B61A1;
+  --primary-hover: #9a73af;
+  --accent: #a07ab6; 
 }
 
-/* PAGE */
+/* PAGE CONTAINER */
 .auth-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f7f8fc, #eef0ff);
+  height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  margin: 0;
+  overflow: hidden; /* Prevents scrollbars */
+  background-color: #e2e8f0;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253,16%,70%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(225,39%,80%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,85%,1) 0, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(321,50%,90%,1) 0, transparent 50%);
 }
 
-/* CARD */
+/* GLASS CARD */
 .auth-card {
-  width: 420px;
-  background: var(--card);
-  padding: 44px 36px;
-  border-radius: 22px;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 360px; /* Compact width */
+  background: rgba(255, 255, 255, 0.4); 
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 25px 30px; /* Tightened padding to fit screen */
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   text-align: center;
 }
 
-/* LOGO */
-.auth-logo {
-  width: 70px;
-  margin-bottom: 12px;
+/* HEADER SECTION */
+.auth-header {
+  margin-bottom: 15px;
 }
 
-/* TEXT */
+.auth-logo {
+  width: 60px;
+  height: auto;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.05));
+}
+
 .auth-title {
   font-size: 26px;
-  font-weight: 700;
-  color: var(--primary);
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  background: linear-gradient(135deg, #2a258b 0%, #6730c6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 5px 0;
 }
 
 .auth-subtitle {
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 28px;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 15px;
+  font-weight: 500;
 }
 
-/* FORM */
-.auth-form input,
-.auth-form select {
-  width: 100%;
-  padding: 14px 16px;
-  margin-bottom: 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  font-size: 14px;
+/* FORM & INPUTS */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Consistent spacing between all elements */
 }
 
-.auth-form input:focus,
-.auth-form select:focus {
+
+.input-field:focus {
   outline: none;
-  border-color: var(--primary);
+  background: #ffffff !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12);
 }
+
+
 
 /* BUTTON */
 .auth-btn {
   width: 100%;
-  padding: 14px;
-  background: var(--primary);
+  padding: 12px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
   border: none;
-  border-radius: 14px;
+  border-radius: 10px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  margin-top: 5px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .auth-btn:hover {
-  opacity: 0.95;
-}
-
-/* ERROR */
-.auth-error {
-  margin-top: 12px;
-  color: red;
-  font-size: 13px;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);
 }
 
 /* FOOTER */
 .auth-footer {
-  margin-top: 24px;
+  margin-top: 15px;
   font-size: 13px;
-  color: var(--muted);
+  color: #64748b;
 }
 
 .auth-footer span {
   color: var(--primary);
+  font-weight: 700;
   cursor: pointer;
-  font-weight: 500;
+}
+
+.auth-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* Update the base input field to use background-color instead of background */
+.input-field {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: rgba(255, 255, 255, 0.8) !important; /* Changed from 'background' */
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #1e293b;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+/* Update the select specific styles */
+select.input-field {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  
+  /* Use background-image separately so it isn't overwritten */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  cursor: pointer;
+  padding-right: 35px !important;
 }

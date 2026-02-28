@@ -15,7 +15,7 @@ const DashboardHome = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // This endpoint returns the full user profile (including role)
+        const token = localStorage.getItem("access_token");
         const res = await api.get("/users/dashboard-data/"); 
         setDashboardData(res.data);
       } catch (err) {
@@ -25,34 +25,35 @@ const DashboardHome = () => {
       }
     };
     
-    // Always fetch data so we get the correct role from the database
     if (user) {
         fetchData();
     }
   }, [user]);
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  if (loading) return <div className="main-viewport"><div className="glass-card">Loading Dashboard...</div></div>;
 
-  // === 🛡️ THE FIX IS HERE ===
-  // We prefer 'dashboardData.role' because it comes from the DB.
-  // We fallback to 'user.role' (from token) only if needed.
-  const rawRole = dashboardData?.role || user?.role || "";
-  const currentRole = rawRole.toLowerCase(); // Handle "Admin" vs "admin"
+  // 1. Normalize the role (Priority: Database API -> Auth Context -> Default to student)
+  const rawRole = dashboardData?.role || user?.role || "student";
+  const currentRole = rawRole.toLowerCase().trim(); 
 
-  console.log("Determined Role:", currentRole); // Check console to verify
+  // 2. Prepare a clean user profile object
+  // This merges the Auth Context (names, username) with Dashboard Data (courses, stats)
+  const fullUserContext = { ...user, ...dashboardData };
 
-  // === THE SWITCH ===
-  // Now we check 'currentRole', not just 'user.role'
-  if (currentRole === "admin" || user?.is_superuser) {
-      return <AdminView user={dashboardData || user} />;
+  console.log("Rendering Dashboard for Role:", currentRole);
+
+  // 3. The Switch Logic
+  // Check for admin first to prevent superusers from being trapped in student view
+  if (currentRole === "admin" || currentRole === "qa" || currentRole === "superuser" || user?.is_superuser) {
+      return <AdminView user={fullUserContext} data={dashboardData} />;
   }
   
   if (currentRole === "instructor") {
-      return <InstructorView user={dashboardData || user} data={dashboardData} />;
+      return <InstructorView user={fullUserContext} data={dashboardData} />;
   }
 
-  // Default to Student
-  return <StudentView user={dashboardData || user} data={dashboardData} />;
+  // Final Fallback: Student View
+  return <StudentView user={fullUserContext} data={dashboardData} />;
 };
 
 export default DashboardHome;

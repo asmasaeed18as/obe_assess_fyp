@@ -3,6 +3,7 @@ from .views import (
     UploadMaterialAndGenerateAssessment, 
     DownloadSpecificAssessment, 
     CourseAssessmentListView,
+    SectionAssessmentListView,
     DownloadAssessmentZip  # <--- MAKE SURE THIS IS IMPORTED
 )
 
@@ -19,5 +20,6 @@ urlpatterns = [
     path('download/<uuid:assessment_id>/<str:content_type>/<str:file_format>/', 
          DownloadSpecificAssessment.as_view(), 
          name='download_specific'),
+    path('course/<uuid:section_id>/', SectionAssessmentListView.as_view(), name='section_course_assessments'),
     path('course/<int:course_id>/', CourseAssessmentListView.as_view(), name='course_assessments'),
 ]
