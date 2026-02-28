@@ -12,9 +12,12 @@ from .views import (
     # Content / CLOs
     CourseListView,
     CourseDetailView, # âœ… IMPORT THE NEW VIEW
+    CourseDetailBySectionView,
     CourseCLOAnalyticsView,
     UploadOutlineView,
+    UploadOutlineBySectionView,
     ListCourseCLOsView,
+    ListSectionCLOsView,
     CLOUpdateView
 )
 
@@ -30,11 +33,15 @@ urlpatterns = [
     
     # --- Generic Course & Content Routes ---
     path("courses/", CourseListView.as_view(), name="course-list"), # Catalog
+    # Course details by section UUID
+    path("courses/<uuid:section_id>/", CourseDetailBySectionView.as_view(), name="course-detail-by-section"),
     # âœ… ADD THIS NEW PATH RIGHT HERE:
     path("courses/<int:pk>/", CourseDetailView.as_view(), name="course-detail"),
     path("courses/<int:pk>/analytics/clo/", CourseCLOAnalyticsView.as_view(), name="course-clo-analytics"),
     # CLO & Outline (Linked to Generic Course ID)
+    path("courses/<uuid:section_id>/upload-outline/", UploadOutlineBySectionView.as_view(), name="upload-outline-by-section"),
     path("courses/<int:course_id>/upload-outline/", UploadOutlineView.as_view(), name="upload-outline"),
     path("courses/<int:course_id>/clos/", ListCourseCLOsView.as_view(), name="course-clos"),
+    path("courses/<uuid:section_id>/clos/", ListSectionCLOsView.as_view(), name="section-clos"),
     path("clo/<uuid:pk>/", CLOUpdateView.as_view(), name="clo-update"),
 ]

@@ -2,6 +2,7 @@
 import api from "../api/axios";
 import AuthContext from "../contexts/AuthContext";
 import "../styles/AssessmentCreate.css"; 
+import "../styles/AssessmentGrading.css"; 
 
 const Settings = () => {
   const { user } = useContext(AuthContext);
@@ -121,16 +122,20 @@ const Settings = () => {
 };
 
 const SettingRow = ({ label, value, onEdit, isStatic = false }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 10px', borderBottom: '1px solid #EAECF0' }}>
-    <span style={{ color: '#667085', fontSize: '1rem' }}>{label}</span>
+  <div className="settings-row" style={{ padding: '12px 0' }}>
+    <span className="settings-label-text" style={{ fontSize: '0.85rem' }}>{label}</span>
     {isStatic ? (
-      <span style={{ color: '#101828', fontWeight: '500' }}>{value}</span>
+      /* Now using the same class as inputs to ensure identical font size/styling */
+      <span className="settings-input-inline" style={{ border: 'none', background: 'transparent', cursor: 'default' }}>
+        {value}
+      </span>
     ) : (
       <input 
         type="text" 
         value={value} 
         onChange={(e) => onEdit(e.target.value)}
-        className="clean-inline-input"
+        className="settings-input-inline"
+        style={{ fontSize: '0.9rem' }}
       />
     )}
   </div>

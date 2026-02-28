@@ -2,6 +2,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthProvider";
+import { GradingProvider } from "./contexts/GradingContext";
 
 // Import Pages
 import Login from "./pages/Login";
@@ -15,13 +16,15 @@ import AssessmentAnalytics from "./pages/AssessmentAnalytics";
 import Settings from './pages/Settings';
 import CourseDetail from "./pages/CourseDetail";
 import CourseEnroll from "./pages/CourseEnroll"; 
+import AdminView from "./components/AdminView";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
+        <GradingProvider>
+          <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -34,6 +37,8 @@ function App() {
               
               {/* Default Index Route: Shows DashboardHome (Courses) */}
               <Route index element={<DashboardHome />} />
+              
+              <Route path="admin" element={<AdminView />} />
               
               {/* ✅ NEW: Route for creating assessment for a SPECIFIC COURSE */}
               {/* This matches the button in CourseDetail: /dashboard/courses/:id/create-assessment */}
@@ -48,7 +53,7 @@ function App() {
               <Route path="enroll-course" element={<CourseEnroll />} />
               
               {/* Placeholders for future routes */}
-              <Route path="grading" element={<div>Grading Page Placeholder</div>} />
+              <Route path="grading" element={<AssessmentGrading />} />
               <Route path="analytics" element={<AssessmentAnalytics />} />
               <Route path="settings" element={<Settings />} />
               
@@ -62,7 +67,8 @@ function App() {
           
           {/* Fallback */}
           <Route path="*" element={<div>Page not found</div>} />
-        </Routes>
+          </Routes>
+        </GradingProvider>
       </AuthProvider>
     </BrowserRouter>
   );

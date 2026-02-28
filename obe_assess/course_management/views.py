@@ -141,6 +141,15 @@ class CourseDetailView(generics.RetrieveAPIView):
     serializer_class = CourseSerializer
     permission_classes = [AllowAny]
 
+class CourseDetailBySectionView(APIView):
+    """Get course details using a CourseSection UUID."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, section_id, *args, **kwargs):
+        section = get_object_or_404(CourseSection, id=section_id)
+        serializer = CourseSerializer(section.course)
+        return Response(serializer.data)
+
 
 class CourseCLOAnalyticsView(APIView):
     """Compute CLO attainment stats for a course based on graded submissions.
@@ -315,6 +324,9 @@ class UploadOutlineView(APIView):
         except Exception as e:
              return Response({"error": f"Extraction failed: {str(e)}"}, status=500)
 
+        # Replace existing CLOs for this course with newly extracted ones
+        CLO.objects.filter(course=course).delete()
+
         # 4. Save CLOs to DB
         saved_clos = []
         for item in clos_data:
@@ -336,6 +348,54 @@ class UploadOutlineView(APIView):
             "clos": CLOSerializer(saved_clos, many=True).data
         }, status=201)
 
+class UploadOutlineBySectionView(APIView):
+    """
+    Uploads outline using a CourseSection UUID, extracts CLOs, saves them.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, section_id):
+        section = get_object_or_404(CourseSection, id=section_id)
+        course = section.course
+        user = get_user_or_mock(request)
+
+        file_obj = request.FILES.get("file")
+        if not file_obj:
+            return Response({"error": "File is required"}, status=400)
+
+        outline = CourseOutline.objects.create(course=course, file=file_obj, uploaded_by=user)
+        file_obj.seek(0)
+
+        try:
+            extractor = OBECourseExtractor(file_obj)
+            clos_data = extractor.extract()
+            print(f"DEBUG: Extracted {len(clos_data)} CLOs")
+        except Exception as e:
+            return Response({"error": f"Extraction failed: {str(e)}"}, status=500)
+
+        # Replace existing CLOs for this course with newly extracted ones
+        CLO.objects.filter(course=course).delete()
+
+        saved_clos = []
+        for item in clos_data:
+            code = item.get('code') or f"CLO-{len(saved_clos)+1}"
+            clo, created = CLO.objects.update_or_create(
+                course=course,
+                code=code,
+                defaults={
+                    'text': item.get('text', ''),
+                    'bloom_level': item.get('bloom'),
+                    'mapped_plos': item.get('mapped_plos', [])
+                }
+            )
+            saved_clos.append(clo)
+
+        return Response({
+            "message": f"Outline uploaded. {len(saved_clos)} CLOs extracted.",
+            "clos": CLOSerializer(saved_clos, many=True).data,
+            "outline_id": str(outline.id)
+        }, status=201)
+
 class ListCourseCLOsView(generics.ListAPIView):
     """Returns CLOs for a specific Generic Course"""
     permission_classes = [AllowAny]
@@ -345,6 +405,17 @@ class ListCourseCLOsView(generics.ListAPIView):
     def get_queryset(self):
         course_id = self.kwargs.get("course_id")
         return CLO.objects.filter(course__id=course_id).order_by("code")
+
+class ListSectionCLOsView(generics.ListAPIView):
+    """Returns CLOs using a CourseSection UUID."""
+    permission_classes = [AllowAny]
+    serializer_class = CLOSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        section_id = self.kwargs.get("section_id")
+        section = get_object_or_404(CourseSection, id=section_id)
+        return CLO.objects.filter(course=section.course).order_by("code")
 
 class CLOUpdateView(generics.RetrieveUpdateDestroyAPIView):
     """Edit a single CLO"""

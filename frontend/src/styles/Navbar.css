@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #2563eb; /* blue */
+  background: var(--primary);
   padding: 0.75rem 2rem;
   color: white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
@@ -44,7 +44,7 @@
 }
 
 .nav-link.active {
-  border-bottom: 2px solid #facc15; /* yellow highlight */
+  border-bottom: 2px solid var(--accent);
 }
 
 /* Right side */
@@ -59,7 +59,7 @@
 }
 
 .logout-btn {
-  background: #f87171; /* red */
+  background: var(--primary);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
@@ -69,5 +69,5 @@
 }
 
 .logout-btn:hover {
-  background: #dc2626;
+  background: var(--primary-dark);
 }
