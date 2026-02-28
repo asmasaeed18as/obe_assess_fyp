@@ -29,10 +29,10 @@ LLM_GENERATE_URL = f"{BASE_LLM_URL}/generate"
 
 
 class UploadMaterialAndGenerateAssessment(APIView):
-    # 🛑 DELETED comment out this line so Django uses your default JWT authentication
+    # DELETED comment out this line so Django uses your default JWT authentication
     # authentication_classes = [] 
     
-    # ✅ APPLY the strict permissions
+    # APPLY the strict permissions
     permission_classes = [IsAuthenticated, IsInstructor]
 
     def post(self, request):
@@ -105,7 +105,7 @@ class UploadMaterialAndGenerateAssessment(APIView):
 
         try:
             # ✅ Uses the correctly built LLM_GENERATE_URL 
-            resp = requests.post(LLM_GENERATE_URL, json=payload, timeout=180)
+            resp = requests.post(LLM_GENERATE_URL, json=payload, timeout=500)
             resp.raise_for_status()
             llm_result = resp.json()
         except requests.exceptions.RequestException as e:

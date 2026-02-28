@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any
 import requests
 import json
 import random
-
+from response_parser import parse_and_clean_assessment, clean_and_extract_json
 import re
 from fastapi.responses import JSONResponse
 
@@ -14,25 +14,7 @@ app = FastAPI(title="LLM Service with Gemma 3 (Ollama)")
 # 1. SHARED HELPERS
 # ==========================================
 
-def clean_and_extract_json(raw_text):
-    """
-    Attempts to extract valid JSON from the LLM's raw output.
-    Handles markdown code blocks and conversational filler.
-    """
-    # 1. Try to find content inside ```json ... ``` blocks
-    code_block_pattern = r"```json\s*([\s\S]*?)\s*```"
-    match = re.search(code_block_pattern, raw_text)
-    if match:
-        return match.group(1)
-    
-    # 2. Fallback: finding the first '{' and last '}'
-    start = raw_text.find('{')
-    end = raw_text.rfind('}')
-    if start != -1 and end != -1:
-        return raw_text[start:end+1]
-    
-    # 3. If no markers found, return raw text and hope it's clean
-    return raw_text
+import re
 
 def call_ollama(prompt, model="gemma3:1b", options=None):
     """
@@ -58,7 +40,7 @@ def call_ollama(prompt, model="gemma3:1b", options=None):
                 "stream": False,
                 "options": options
             },
-            timeout=300 # Extended timeout for long generations
+            timeout=500 # Extended timeout for long generations
         )
         resp.raise_for_status()
         return resp.json().get("response", "").strip()
@@ -88,156 +70,219 @@ class LLMRequest(BaseModel):
 def generate_assessment(req: LLMRequest):
     """
     Generates assessment questions TAILORED to specific types (Quiz/MCQs, Lab, Project)
-    and supports sub-options (e.g., mixing MCQs and Short Questions).
+    and enforces strict mathematical constraints to prevent LLM hallucination.
     """
-    
-    # --- STRATEGY PATTERN FOR PROMPTS (OPTIMIZED) ---
-    strategies = {
-        "Quiz/MCQs": {
-            "role": "You are a quiz master.",
-            "task": "Generate a mix of Multiple Choice Questions (MCQs) and Short Questions.",
-            "format_instruction": "For MCQs, 'options' MUST be a list of 4 choices [\"A\", \"B\", \"C\", \"D\"]. For Short Questions, 'options' MUST be null.",
-            "structure": "Mixed"
-        },
-        "Lab Manual": {
-            "role": "You are a senior computer science lab instructor.",
-            "task": "Generate hands-on, practical Lab Tasks. Students need to write code, run commands, or analyze output.",
-            "format_instruction": "The 'question' field MUST contain the Lab Task Scenario. The 'answer' field MUST contain the expected output or code solution. 'options' MUST be null.",
-            "structure": "Practical Task"
-        },
-        "Project Report": {
-            "role": "You are a university project supervisor.",
-            "task": "Generate comprehensive Project Proposals/Milestones based on the material.",
-            "format_instruction": "The 'question' field MUST contain the Problem Statement. The 'answer' field MUST contain the Evaluation Methodology. 'options' MUST be null.",
-            "structure": "Project Proposal"
-        },
-        "Assignment": {
-            "role": "You are an academic professor.",
-            "task": "Generate high-level analytical, mathematical, or theoretical assignment questions.",
-            "format_instruction": "Questions must be open-ended requiring detailed work. 'answer' should contain the model solution. 'options' MUST be null.",
-            "structure": "Analytical Question"
-        },
-        "Exam": {
-            "role": "You are a strict examiner.",
-            "task": "Generate standard academic exam questions.",
-            "format_instruction": "Standard question and detailed model answer format. 'options' MUST be null.",
-            "structure": "Exam Question"
-        }
-    }
-
-    # Select strategy (Default to Exam if unknown)
-    strategy = strategies.get(req.assessment_type, strategies["Exam"])
-
-    # 1. Build requirements string with SPECIFIC TYPES
-    requirements_list = ""
-    for q in req.questions_config:
-        q_type = q.question_type if q.question_type else strategy.get("structure", "Standard")
-        requirements_list += (
-            f"- Item {q.id}: Type={q_type}, {q.weightage} Marks, CLO: {q.clo}, Bloom: {q.bloom_level}, Difficulty: {q.difficulty}\n"
-        )
-
     num_questions = len(req.questions_config)
 
-    # 2. Prepare the Highly Restrictive Dynamic Prompt
-    prompt = f"""
-    You are an expert academic content creator.
-    {strategy['role']}
+    # 1. Build the dynamic Requirements List
+    requirements_list = ""
+    for q in req.questions_config:
+        q_type = q.question_type or "Standard"
+        
+        # Add a specific nudge for the mixed MCQ/Short Question type
+        if req.assessment_type == "Quiz/MCQs":
+            if q_type in ["Multiple Choice", "MCQ"]:
+                rule_nudge = "FORMAT: Multiple Choice. TOPIC: Extract a concept from the text."
+            else:
+                rule_nudge = "FORMAT: Detailed Essay/Short Answer. TOPIC: Extract a concept from the text."
+        else:
+            rule_nudge = ""
+            
+        requirements_list += f"- Item ID {q.id}: {rule_nudge} {q.weightage} Marks, CLO: {q.clo}, Bloom Level: {q.bloom_level}, Difficulty: {q.difficulty}\n"
 
-    CONTEXT MATERIAL:
-    {req.text[:8000]}
-
-    YOUR TASK:
-    {strategy['task']}
+    # 2. 🚦 THE 5-WAY PROMPT ROUTER 🚦
     
-    CRITICAL INSTRUCTION: You MUST generate EXACTLY {num_questions} items based on the Requirements List below. DO NOT STOP EARLY. If there are {num_questions} items required, your JSON array MUST contain exactly {num_questions} objects.
+    if req.assessment_type == "Quiz/MCQs":
+        prompt = f"""
+You are an expert academic data extraction and content creation AI.
+You are a precise university quiz master.
+CONTEXT MATERIAL: {req.text[:20000]}
 
-    REQUIREMENTS LIST:
-    {requirements_list}
+YOUR TASK: Generate Multiple Choice Questions (MCQs) and Short Questions strictly following the rules.
+Generate exactly {num_questions} items.
 
-    STRICT JSON OUTPUT INSTRUCTIONS:
-    {strategy['format_instruction']}
-    - For the 'rubric', you MUST write a specific, context-aware 1-sentence grading criterion for "Excellent", "Average", and "Poor" tailored specifically to the generated question. Do not leave them blank.
+REQUIREMENTS LIST:
+{requirements_list}
 
-    You MUST return ONLY valid JSON matching this schema exactly. DO NOT rename the JSON keys:
-    {{
-        "questions": [
-            {{
-                "id": 1,
-                "question": "<Write the detailed task, scenario, or question here>",
-                "options": ["<Option A>", "<Option B>", "<Option C>", "<Option D>"] OR null, 
-                "answer": "<Write the expected output, code, model solution, or correct option here>",
-                "marks": "5",
-                "rubric": {{
-                    "Excellent": "<Write exactly what the student must include to get full marks>",
-                    "Average": "<Write exactly what a partial or half-correct answer looks like>",
-                    "Poor": "<Write exactly what a failing or incorrect answer looks like>"
-                }}
+STRICT JSON OUTPUT SCHEMA:
+You MUST return a raw JSON array of exactly {num_questions} objects. DO NOT use markdown code blocks.
+Even for short questions, you MUST keep the "options" array in the JSON to avoid breaking the format (just fill it with dummy text if it's a short question).
+
+{{
+    "questions": [
+        {{
+            "id": <Match ITEM ID exactly>,
+            "question": "<Write the question text here>",
+            "options": ["<Option A>", "<Option B>", "<Option C>", "<Option D>"],
+            "answer": "<Write the full correct answer or detailed explanation here>",
+            "marks": "<Marks>",
+            "rubric": {{
+                "Full_Marks": "<Criteria for 90-100% marks>",
+                "Partial_Marks": "<Criteria for 30-50% marks>",
+                "Zero_Marks": "<Criteria for 0% marks>"
             }}
-        ]
-    }}
-    """
+        }}
+    ]
+}}
+🛑 CRITICAL WARNING: YOU MUST GENERATE EXACTLY {num_questions} ITEMS. DO NOT STOP EARLY. YOUR LAST ITEM MUST HAVE "id": {num_questions}. 🛑
+"""
+    elif req.assessment_type == "Lab Manual":
+        prompt = f"""
+You are an expert academic data extraction and content creation AI.
+You are a senior computer science lab instructor.
+CONTEXT MATERIAL: {req.text[:20000]}
 
-    # 3. Call Ollama with SPECIFIC hyperparameter options to prevent early cut-offs
+YOUR TASK: Generate hands-on, practical Lab Tasks. Students need to write code, run commands, or analyze output.
+Generate exactly {num_questions} items.
+
+REQUIREMENTS LIST:
+{requirements_list}
+
+STRICT JSON OUTPUT SCHEMA:
+You MUST return a raw JSON array of exactly {num_questions} objects. DO NOT use markdown code blocks.
+The 'question' field MUST contain the Lab Task Scenario. The 'answer' field MUST contain the expected output or code solution. 'options' MUST be exactly null.
+
+{{
+    "questions": [
+        {{
+            "id": <Match ITEM ID exactly>,
+            "question": "<Write the Lab Task Scenario here>",
+            "options": null,
+            "answer": "<Write the expected output or code solution here>",
+            "marks": "<Marks>",
+            "rubric": {{
+                "Excellent": "<Criteria for full marks>",
+                "Average": "<Criteria for partial marks>",
+                "Poor": "<Criteria for zero marks>"
+            }}
+        }}
+    ]
+}}
+"""
+    elif req.assessment_type == "Project Report":
+        prompt = f"""
+You are an expert academic data extraction and content creation AI.
+You are a university project supervisor.
+CONTEXT MATERIAL: {req.text[:20000]}
+
+YOUR TASK: Generate comprehensive Project Proposals/Milestones based on the material.
+Generate exactly {num_questions} items.
+
+REQUIREMENTS LIST:
+{requirements_list}
+
+STRICT JSON OUTPUT SCHEMA:
+You MUST return a raw JSON array of exactly {num_questions} objects. DO NOT use markdown code blocks.
+The 'question' field MUST contain the Problem Statement. The 'answer' field MUST contain the Evaluation Methodology. 'options' MUST be exactly null.
+
+{{
+    "questions": [
+        {{
+            "id": <Match ITEM ID exactly>,
+            "question": "<Write the Problem Statement here>",
+            "options": null,
+            "answer": "<Write the Evaluation Methodology here>",
+            "marks": "<Marks>",
+            "rubric": {{
+                "Excellent": "<Criteria for full marks>",
+                "Average": "<Criteria for partial marks>",
+                "Poor": "<Criteria for zero marks>"
+            }}
+        }}
+    ]
+}}
+"""
+    elif req.assessment_type == "Assignment":
+        prompt = f"""
+You are an expert academic data extraction and content creation AI.
+You are an academic professor.
+CONTEXT MATERIAL: {req.text[:20000]}
+
+YOUR TASK: Generate high-level analytical, mathematical, or theoretical assignment questions.
+Generate exactly {num_questions} items.
+
+REQUIREMENTS LIST:
+{requirements_list}
+
+STRICT JSON OUTPUT SCHEMA:
+You MUST return a raw JSON array of exactly {num_questions} objects. DO NOT use markdown code blocks.
+Questions must be open-ended requiring detailed work. The 'answer' should contain the model solution. 'options' MUST be exactly null.
+
+{{
+    "questions": [
+        {{
+            "id": <Match ITEM ID exactly>,
+            "question": "<Write the open-ended analytical question here>",
+            "options": null,
+            "answer": "<Write the detailed model solution here>",
+            "marks": "<Marks>",
+            "rubric": {{
+                "Excellent": "<Criteria for full marks>",
+                "Average": "<Criteria for partial marks>",
+                "Poor": "<Criteria for zero marks>"
+            }}
+        }}
+    ]
+}}
+"""
+    else:  # Exam
+        prompt = f"""
+You are an expert academic data extraction and content creation AI.
+You are a strict academic examiner.
+CONTEXT MATERIAL: {req.text[:20000]}
+
+YOUR TASK: Generate standard academic exam questions.
+Generate exactly {num_questions} items.
+
+REQUIREMENTS LIST:
+{requirements_list}
+
+STRICT JSON OUTPUT SCHEMA:
+You MUST return a raw JSON array of exactly {num_questions} objects. DO NOT use markdown code blocks.
+Standard question and detailed model answer format. 'options' MUST be exactly null.
+
+{{
+    "questions": [
+        {{
+            "id": <Match ITEM ID exactly>,
+            "question": "<Write the standard exam question here>",
+            "options": null,
+            "answer": "<Write the detailed model answer here>",
+            "marks": "<Marks>",
+            "rubric": {{
+                "Excellent": "<Criteria for full marks>",
+                "Average": "<Criteria for partial marks>",
+                "Poor": "<Criteria for zero marks>"
+            }}
+        }}
+    ]
+}}
+"""
+
+    # 3. Call Ollama with strict hyperparameter tuning
     ollama_options = {
-        "temperature": 0.3,   # Slight creativity for question generation
-        "top_k": 40,
-        "num_predict": 4000,  # CRITICAL: Forces Ollama to allow long outputs (fixes missing questions)
-        "num_ctx": 8192       # CRITICAL: Gives it enough memory to read the document context
+        "temperature": 0.1,   
+        "top_k": 10,          
+        "num_predict": 10000, 
+        "num_ctx": 8192       
     }
     
-    # ✅ USING GEMMA 3 (1B)
     result_text = call_ollama(prompt, model="gemma3:1b", options=ollama_options)
 
-    # 4. Clean and Extract JSON
-    clean_json_str = clean_and_extract_json(result_text)
-    
-    questions_data = []
-    try:
-        parsed = json.loads(clean_json_str)
-        questions_data = parsed.get("questions", [])
-    except json.JSONDecodeError:
-        print("❌ JSON Decode Error. The LLM output was not valid JSON.")
-        questions_data = []
+    print("\n" + "="*50)
+    print(f"🤖 RAW LLM OUTPUT ({req.assessment_type}):")
+    print(result_text)
+    print("="*50 + "\n")
 
-    # 5. Validation & Fallback (Merge with Config)
-    final_questions = []
-    
-    for i, config in enumerate(req.questions_config):
-        q_data = {}
-        
-        # Try to use LLM data if available for this index
-        if i < len(questions_data):
-            q_data = questions_data[i]
-        
-        # Force metadata correctness from config (overwrites LLM hallucinations)
-        q_data["id"] = config.id
-        q_data["marks"] = config.weightage
-        q_data["meta"] = {
-            "clo": config.clo,
-            "bloom": config.bloom_level,
-            "difficulty": config.difficulty,
-            "type": config.question_type or strategy["structure"]
-        }
+    # 4. Delegate JSON parsing to the external janitor file
+    # (Passing a generic strategy dict because the logic is already handled in the prompt)
+    final_questions = parse_and_clean_assessment(result_text, req.questions_config, {"structure": "Standard"})
 
-        # Fallback if specific fields are missing or if generation stopped early
-        if "question" not in q_data:
-            q_data["question"] = f"Error: Generation failed for Item {config.id}. The AI model stopped early."
-            q_data["answer"] = "N/A"
-            q_data["options"] = None
-            q_data["rubric"] = {
-                "Excellent": "N/A",
-                "Average": "N/A",
-                "Poor": "N/A"
-            }
-
-        final_questions.append(q_data)
-
-    # 6. Return Structured Response
+    # 5. Return Structured Response
     return JSONResponse(
         content={
             "metadata": {
                 "assessment_type": req.assessment_type,
-                "strategy_used": strategy["task"],
                 "total_questions": num_questions
             },
             "questions": final_questions

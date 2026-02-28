@@ -24,10 +24,26 @@ const QuestionCard = ({ q, idx }) => {
         </div>
       </div>
 
-      <p className="text-gray-800 text-[1.05rem] leading-relaxed font-medium">
+      {/* Question Text */}
+      <p className="text-gray-800 text-[1.05rem] leading-relaxed font-medium mb-4">
         {q.question}
       </p>
 
+      {/* ✅ THE FIX: Dynamically render Options if they exist */}
+      {q.options && Array.isArray(q.options) && q.options.length > 0 && (
+        <div className="mb-5 pl-2 md:pl-4 space-y-2">
+          {q.options.map((opt, i) => (
+            <div 
+              key={i} 
+              className="flex items-start bg-white p-3 rounded-lg border border-[#ecd9c6] shadow-sm"
+            >
+              <span className="text-gray-700 font-medium">{opt}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Model Answer */}
       {q.answer && (
         <div className="mt-5 bg-[#fffaf4] border-l-4 border-[#d4a373] p-4 rounded-r-lg shadow-sm">
           <p className="text-sm text-[#4a3f35]">
@@ -37,6 +53,7 @@ const QuestionCard = ({ q, idx }) => {
         </div>
       )}
 
+      {/* Grading Rubric */}
       {q.rubric && (
         <div className="mt-5 pt-4 border-t border-[#ecd9c6]">
           <h4 className="text-sm font-bold text-[#5b4636] mb-2 uppercase tracking-wide">Grading Rubric:</h4>
