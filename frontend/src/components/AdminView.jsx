@@ -8,10 +8,10 @@ const AdminView = () => {
       {/* ---------- Admin Header ---------- */}
       <header className="page-header stacked">
         <div className="header-text">
-          <h1>Admin Console</h1>
-          <p className="subtitle">
+          <h1>Admin Dashboard</h1>
+          {/* <p className="subtitle">
             Manage institutional hierarchy, programs, and course registrations.
-          </p>
+          </p> */}
         </div>
       </header>
 

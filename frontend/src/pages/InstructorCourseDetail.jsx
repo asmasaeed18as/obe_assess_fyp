@@ -20,10 +20,11 @@ const InstructorCourseDetail = () => {
 
   const fetchCourseData = async () => {
     try {
+      const timestamp = new Date().getTime();
       const [courseRes, cloRes, assessRes] = await Promise.all([
-        api.get(`/courses/${id}/`),
-        api.get(`/courses/${id}/clos/`),
-        api.get(`/assessment/course/${id}/`)
+        api.get(`/courses/${id}/?t=${timestamp}`),
+        api.get(`/courses/${id}/clos/?t=${timestamp}`),
+        api.get(`/assessment/course/${id}/?t=${timestamp}`)
       ]);
       setCourse(courseRes.data);
       setClos(cloRes.data);
@@ -97,7 +98,7 @@ const InstructorCourseDetail = () => {
                   <div className="header-action-row">
           <div className="header-button-container">
           <button className="action-pill" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-            {uploading ? "Uploading..." : "Upload Outline"}
+            {uploading ? "Extracting..." : "Upload Outline"}
           </button>
           <input
             ref={fileInputRef}

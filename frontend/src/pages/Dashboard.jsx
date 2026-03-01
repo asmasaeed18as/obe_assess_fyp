@@ -46,6 +46,9 @@ export default function DashboardLayout() {
               <NavLink to="/dashboard/create-assessment" className={({ isActive }) => `menu-item ${isActive ? "active" : ""}`}>
                 <FilePlus size={20}/> Assessments
               </NavLink>
+              <NavLink to="/dashboard/analytics" className={({ isActive }) => `menu-item ${isActive ? "active" : ""}`}>
+                <BarChart2 size={20}/> Analytics
+              </NavLink>
               <NavLink to="/dashboard/grading" className={({ isActive }) => `menu-item ${isActive ? "active" : ""}`}>
                 <GraduationCap size={20}/> Grading
               </NavLink>
@@ -53,9 +56,6 @@ export default function DashboardLayout() {
           )}
 
           {/* SHARED LINKS */}
-          <NavLink to="/dashboard/analytics" className={({ isActive }) => `menu-item ${isActive ? "active" : ""}`}>
-            <BarChart2 size={20}/> Analytics
-          </NavLink>
           
           <NavLink to="/dashboard/settings" className={({ isActive }) => `menu-item ${isActive ? "active" : ""}`}>
             <Settings size={20}/> Settings
