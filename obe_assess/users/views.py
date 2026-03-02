@@ -1,6 +1,8 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
 from .models import User
 from .serializers import DashboardDataSerializer, UserSerializer, RegisterSerializer, MyTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -60,16 +62,25 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
 class ChangePasswordView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
+    
     def post(self, request):
         user = request.user
-        old = request.data.get("old_password")
-        new = request.data.get("new_password")
+        old = request.data.get("old_password") # Matches React 'old_password'
+        new = request.data.get("new_password") # Matches React 'new_password'
+        
+        # 1. Check if the old password is correct
         if not user.check_password(old):
-            return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+            # Changed key to 'detail' so React catches it easily
+            return Response({"detail": "Current password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 2. Basic validation to ensure new password isn't empty
+        if not new or len(new) < 6:
+            return Response({"detail": "New password must be at least 6 characters."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. Set and Save
         user.set_password(new)
         user.save()
-        return Response({"detail": "Password updated."}, status=status.HTTP_200_OK)
-
+        return Response({"detail": "Password updated successfully!"}, status=status.HTTP_200_OK)
 # Admin list of users
 class UserListView(generics.ListAPIView):
     permission_classes = (IsAdminRole,) # Also updated this to use the strict role check!
@@ -86,3 +97,4 @@ class DashboardDataView(APIView):
     def get(self, request):
         serializer = DashboardDataSerializer(request.user)
         return Response(serializer.data)
+    

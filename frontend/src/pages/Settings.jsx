@@ -2,25 +2,28 @@
 import api from "../api/axios";
 import AuthContext from "../contexts/AuthContext";
 import "../styles/AssessmentCreate.css"; 
-import "../styles/AssessmentGrading.css"; 
 
 const Settings = () => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  
   const [profile, setProfile] = useState({
-    first_name: "",
-    last_name: "",
-    username: "",
-    email: "",
-    role: ""
+    first_name: "", last_name: "", username: "", email: "", role: ""
+  });
+
+  // Password change states
+  const [passwords, setPasswords] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: ""
   });
 
   const displayName = [profile.first_name, profile.last_name].filter(Boolean).join(" ")
     || profile.username
-    || (user?.first_name ? user.first_name : "")
-    || "Your Name";
+    || "User";
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -33,111 +36,130 @@ const Settings = () => {
           last_name: data.last_name || "",
           username: data.username || "",
           email: data.email || "",
-          role: data.role || ""
+          // Capitalize first letter of role
+          role: data.role ? data.role.charAt(0).toUpperCase() + data.role.slice(1) : ""
         });
       } catch (err) {
-        console.error("Failed to load profile:", err);
         setError("Failed to load profile.");
       } finally {
         setLoading(false);
       }
     };
-
     loadProfile();
   }, []);
 
-  const handleChange = (field, value) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+  const handlePasswordChange = (e) => {
+    setPasswords({ ...passwords, [e.target.name]: e.target.value });
+    setError("");
+    setSuccess("");
   };
 
-  const handleSave = async () => {
+  const onUpdatePassword = async (e) => {
+    e.preventDefault();
+    if (passwords.new_password !== passwords.confirm_password) {
+      setError("New passwords do not match.");
+      return;
+    }
+
     setSaving(true);
-    setError("");
     try {
-      const res = await api.put("/users/me/", {
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        username: profile.username,
-        email: profile.email
+      await api.post("/users/change-password/", {
+        old_password: passwords.current_password,
+        new_password: passwords.new_password
       });
-      const data = res?.data || {};
-      setProfile(prev => ({
-        ...prev,
-        first_name: data.first_name || prev.first_name,
-        last_name: data.last_name || prev.last_name,
-        username: data.username || prev.username,
-        email: data.email || prev.email,
-        role: data.role || prev.role
-      }));
+      setSuccess("Password updated successfully!");
+      setPasswords({ current_password: "", new_password: "", confirm_password: "" });
     } catch (err) {
-      console.error("Failed to save profile:", err);
-      setError("Failed to save profile.");
+      setError(err.response?.data?.detail || "Failed to update password. Check your current password.");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="assessment-container">
-        <h1 className="page-title">Settings</h1>
-        <p>Loading profile...</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="assessment-container"><div className="settings-wrapper">Loading...</div></div>;
 
   return (
-    <div className="assessment-container" style={{ minHeight: '100vh', paddingBottom: '50px' }}>
-      <h1 className="page-title">Settings</h1>
+    <div className="assessment-container">
+      <div className="settings-wrapper">
+        <div className="card-section settings-glass-card">
+          <div className="profile-header-section">
+            <div className="avatar-circle-large">
+              {profile.first_name ? profile.first_name[0] : (profile.username ? profile.username[0].toUpperCase() : "U")}
+            </div>
+            <h2 className="profile-name-display">{displayName}</h2>
+            <p className="profile-email-display" style={{ fontSize: '0.85rem' }}>{profile.email}</p>
+          </div>
 
-      <div className="assessment-form" style={{ maxWidth: '650px', background: '#fff', padding: '30px', borderRadius: '16px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', marginBottom: '40px' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#F2F4F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>
+          <div className="settings-list">
+            <SettingRow label="First Name" value={profile.first_name} isStatic={true} />
+            <SettingRow label="Last Name" value={profile.last_name} isStatic={true} />
+            <SettingRow label="Username" value={profile.username} isStatic={true} />
+            <SettingRow label="Email" value={profile.email} isStatic={true} />
+            <SettingRow label="Role" value={profile.role} isStatic={true} />
+          </div>
+
+          <div className="password-change-section" style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '15px', color: '#4c1d95' }}>Change Password</h3>
+            <div className="settings-list">
+              <div className="settings-row" style={{ padding: '8px 0' }}>
+                <span className="settings-label-text" style={{ flex: '1' }}>Current Password</span>
+                <input 
+                  type="password" 
+                  name="current_password"
+                  value={passwords.current_password}
+                  onChange={handlePasswordChange}
+                  className="settings-input-inline"
+                  style={{ flex: '1.5', background: 'rgba(255,255,255,0.5)' }} 
+                />
+              </div>
+              <div className="settings-row" style={{ padding: '8px 0' }}>
+                <span className="settings-label-text" style={{ flex: '1' }}>New Password</span>
+                <input 
+                  type="password" 
+                  name="new_password"
+                  value={passwords.new_password}
+                  onChange={handlePasswordChange}
+                  className="settings-input-inline"
+                  style={{ flex: '1.5', background: 'rgba(255,255,255,0.5)' }} 
+                />
+              </div>
+              <div className="settings-row" style={{ padding: '8px 0' }}>
+                <span className="settings-label-text" style={{ flex: '1' }}>Confirm Password</span>
+                <input 
+                  type="password" 
+                  name="confirm_password"
+                  value={passwords.confirm_password}
+                  onChange={handlePasswordChange}
+                  className="settings-input-inline"
+                  style={{ flex: '1.5', background: 'rgba(255,255,255,0.5)' }} 
+                />
+              </div>
+            </div>
+
+            <button 
+              className="generate-btn" 
+              style={{ width: '100%', marginTop: '20px' }} 
+              onClick={onUpdatePassword} 
+              disabled={saving || !passwords.new_password}
+            >
+              {saving ? "Updating..." : "Update Password"}
+            </button>
             
+            {error && <p className="error-msg" style={{ marginTop: '10px', color: '#ff4d4f', textAlign: 'center' }}>{error}</p>}
+            {success && <p className="success-msg" style={{ marginTop: '10px', color: '#52c41a', textAlign: 'center' }}>{success}</p>}
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600', color: '#101828' }}>{displayName}</h2>
-            <p style={{ margin: 0, color: '#667085' }}>{profile.email || ""}</p>
-          </div>
-        </div>
-
-        {error && <p className="error-msg">{error}</p>}
-
-        <div style={{ borderTop: '1px solid #EAECF0' }}>
-          <SettingRow label="First Name" value={profile.first_name} onEdit={(v) => handleChange('first_name', v)} />
-          <SettingRow label="Last Name" value={profile.last_name} onEdit={(v) => handleChange('last_name', v)} />
-          <SettingRow label="Username" value={profile.username} onEdit={(v) => handleChange('username', v)} />
-          <SettingRow label="Email" value={profile.email} onEdit={(v) => handleChange('email', v)} />
-          <SettingRow label="Role" value={profile.role} isStatic={true} />
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
-          <button className="settings-pill-btn" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
         </div>
       </div>
     </div>
   );
 };
 
-const SettingRow = ({ label, value, onEdit, isStatic = false }) => (
-  <div className="settings-row" style={{ padding: '12px 0' }}>
-    <span className="settings-label-text" style={{ fontSize: '0.85rem' }}>{label}</span>
-    {isStatic ? (
-      /* Now using the same class as inputs to ensure identical font size/styling */
-      <span className="settings-input-inline" style={{ border: 'none', background: 'transparent', cursor: 'default' }}>
-        {value}
-      </span>
-    ) : (
-      <input 
-        type="text" 
-        value={value} 
-        onChange={(e) => onEdit(e.target.value)}
-        className="settings-input-inline"
-        style={{ fontSize: '0.9rem' }}
-      />
-    )}
+const SettingRow = ({ label, value, isStatic = false }) => (
+  <div className="settings-row" style={{ padding: '12px 0', display: 'flex', alignItems: 'center' }}>
+    <span className="settings-label-text" style={{ flex: '1' }}>{label}</span>
+    <span className="settings-value-static" style={{ flex: '2', textAlign: 'right', fontWeight: '500', color: '#666' }}>
+      {value || "N/A"}
+    </span>
   </div>
 );
 
