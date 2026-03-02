@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated, AllowAny
+import re
 
 # Import Models
 from .models import (
@@ -32,6 +33,84 @@ def get_user_or_mock(request):
     if request.user.is_authenticated:
         return request.user
     return User.objects.first()
+
+
+def _normalize_clo_code(raw_code, fallback_index):
+    value = " ".join(str(raw_code or "").split()).upper()
+    if not value:
+        return f"CLO-{fallback_index}"
+
+    num_match = re.search(r"\bCLO\b\s*[-:]?\s*(\d+)", value, flags=re.IGNORECASE)
+    if num_match:
+        return f"CLO-{num_match.group(1)}"[:64]
+
+    just_num = re.fullmatch(r"\d+", value)
+    if just_num:
+        return f"CLO-{just_num.group(0)}"[:64]
+
+    return value[:64]
+
+
+def _normalize_bloom_level(raw_bloom):
+    value = " ".join(str(raw_bloom or "").split())
+    if not value:
+        return ""
+
+    bt_match = re.search(r"\b([CPA])\s*-?\s*(\d+)\b", value, flags=re.IGNORECASE)
+    if bt_match:
+        return f"{bt_match.group(1).upper()}-{bt_match.group(2)}"
+
+    return value[:20]
+
+
+def _normalize_mapped_plos(raw_plos):
+    if isinstance(raw_plos, str):
+        candidates = [raw_plos]
+    elif isinstance(raw_plos, list):
+        candidates = raw_plos
+    else:
+        candidates = []
+
+    clean = []
+    seen = set()
+    for candidate in candidates:
+        text = str(candidate or "")
+        se_matches = re.findall(r"\bPLO\s*\(\s*SE\s*\)\s*-?\s*(\d+)\b", text, flags=re.IGNORECASE)
+        cs_matches = re.findall(
+            r"\b(?:PLO\s*\(\s*CS\s*\)|SO\s*\(\s*PLO\s*\)\s*(?:\(\s*CS\s*\))?)\s*-?\s*(\d+)\b",
+            text,
+            flags=re.IGNORECASE,
+        )
+        generic_matches = re.findall(r"\bPLO\s*-?\s*(\d+)\b", text, flags=re.IGNORECASE)
+
+        if se_matches or cs_matches or generic_matches:
+            for m in se_matches:
+                plo = f"PLO(SE)-{m}"
+                if plo not in seen:
+                    seen.add(plo)
+                    clean.append(plo)
+            for m in cs_matches:
+                plo = f"PLO(CS)-{m}"
+                if plo not in seen:
+                    seen.add(plo)
+                    clean.append(plo)
+            for m in generic_matches:
+                plo = f"PLO-{m}"
+                if plo not in seen:
+                    seen.add(plo)
+                    clean.append(plo)
+        else:
+            compact = " ".join(text.split()).upper()
+            if compact.startswith("PLO") and compact not in seen:
+                seen.add(compact)
+                clean.append(compact[:20])
+            elif re.fullmatch(r"\d{1,2}", compact):
+                plo = f"PLO-{compact}"
+                if plo not in seen:
+                    seen.add(plo)
+                    clean.append(plo)
+
+    return clean
 
 # ==========================================
 # 1. ADMIN DASHBOARD APIs (Hierarchy & Sections)
@@ -330,15 +409,20 @@ class UploadOutlineView(APIView):
         # 4. Save CLOs to DB
         saved_clos = []
         for item in clos_data:
-            code = item.get('code') or f"CLO-{len(saved_clos)+1}"
+            text = " ".join(str(item.get('text', '')).split()).strip()
+            if not text:
+                continue
+            code = _normalize_clo_code(item.get('code'), len(saved_clos) + 1)
+            bloom = _normalize_bloom_level(item.get('bloom'))
+            mapped_plos = _normalize_mapped_plos(item.get('mapped_plos', []))
             
             clo, created = CLO.objects.update_or_create(
                 course=course,
                 code=code,
                 defaults={
-                    'text': item.get('text', ''), 
-                    'bloom_level': item.get('bloom'),
-                    'mapped_plos': item.get('mapped_plos', [])
+                    'text': text,
+                    'bloom_level': bloom,
+                    'mapped_plos': mapped_plos
                 }
             )
             saved_clos.append(clo)
@@ -378,14 +462,19 @@ class UploadOutlineBySectionView(APIView):
 
         saved_clos = []
         for item in clos_data:
-            code = item.get('code') or f"CLO-{len(saved_clos)+1}"
+            text = " ".join(str(item.get('text', '')).split()).strip()
+            if not text:
+                continue
+            code = _normalize_clo_code(item.get('code'), len(saved_clos) + 1)
+            bloom = _normalize_bloom_level(item.get('bloom'))
+            mapped_plos = _normalize_mapped_plos(item.get('mapped_plos', []))
             clo, created = CLO.objects.update_or_create(
                 course=course,
                 code=code,
                 defaults={
-                    'text': item.get('text', ''),
-                    'bloom_level': item.get('bloom'),
-                    'mapped_plos': item.get('mapped_plos', [])
+                    'text': text,
+                    'bloom_level': bloom,
+                    'mapped_plos': mapped_plos
                 }
             )
             saved_clos.append(clo)
@@ -423,3 +512,4 @@ class CLOUpdateView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CLOSerializer
     queryset = CLO.objects.all()
     lookup_field = 'pk'
+

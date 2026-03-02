@@ -117,14 +117,14 @@ Even for short questions, you MUST keep the "options" array in the JSON to avoid
             "answer": "<Write the full correct answer or detailed explanation here>",
             "marks": "<Marks>",
             "rubric": {{
-                "Full_Marks": "<Criteria for 90-100% marks>",
-                "Partial_Marks": "<Criteria for 30-50% marks>",
-                "Zero_Marks": "<Criteria for 0% marks>"
+                "Excellent": "<Criteria for 90-100% marks>",
+                "Average": "<Criteria for 30-50% marks>",
+                "Poor": "<Criteria for 0% marks>"
             }}
         }}
     ]
 }}
-🛑 CRITICAL WARNING: YOU MUST GENERATE EXACTLY {num_questions} ITEMS. DO NOT STOP EARLY. YOUR LAST ITEM MUST HAVE "id": {num_questions}. 🛑
+🛑 CRITICAL WARNING: YOU MUST GENERATE EXACTLY {num_questions} ITEMS.DO NOT LEAVE RUBRICS EMPTY. DO NOT STOP EARLY. YOUR LAST ITEM MUST HAVE "id": {num_questions}. 🛑
 """
     elif req.assessment_type == "Lab Manual":
         prompt = f"""

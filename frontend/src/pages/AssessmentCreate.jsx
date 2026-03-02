@@ -132,10 +132,40 @@ const AssessmentCreate = () => {
     }
   };
 
-  const handleDownloadZip = () => {
-    if (!assessment?.id) return;
-    window.open(`${backendBaseURL}/api/assessment/download-zip/${assessment.id}/docx/`, "_blank");
-  };
+  const handleDownloadZip = async () => {
+  if (!assessment?.id) return;
+
+  try {
+    // 1. Fetch securely using Axios (this attaches your JWT token automatically)
+    // We MUST specify responseType: 'blob' so it knows it's a file, not JSON text.
+    const response = await api.get(`/assessment/download-zip/${assessment.id}/docx/`, {
+      responseType: 'blob',
+    });
+
+    // 2. Create a temporary URL pointing to this secure file data in the browser's memory
+    const blob = new Blob([response.data], { type: 'application/zip' });
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    // 3. Create a hidden, temporary link element
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    
+    // 4. Force it to download with a specific filename
+    link.setAttribute('download', `Assessment_${assessment.id}_Docs.zip`);
+    document.body.appendChild(link);
+    
+    // 5. Simulate a click to start the download
+    link.click();
+    
+    // 6. Clean up to prevent memory leaks!
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+
+  } catch (error) {
+    console.error("Failed to download ZIP securely:", error);
+    alert("Download failed. Your session may have expired, or the file doesn't exist.");
+  }
+};
 
   return (
     <div className="assessment-container">

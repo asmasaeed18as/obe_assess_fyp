@@ -25,7 +25,7 @@ def clean_and_extract_json(raw_text):
     if start_idx != -1 and end_idx != -1 and end_idx >= start_idx:
         extracted_json = raw_text[start_idx:end_idx+1]
         
-        #THE TRAILING COMMA FIX
+        # THE TRAILING COMMA FIX
         # This regex looks for a comma followed by any amount of whitespace, 
         # immediately followed by a closing bracket } or ]
         extracted_json = re.sub(r',\s*([\]}])', r'\1', extracted_json)
@@ -82,8 +82,17 @@ def parse_and_clean_assessment(result_text, questions_config, strategy):
         
         if start_idx != -1 and end_idx != -1 and end_idx >= start_idx:
             cleaned_text = raw_text[start_idx:end_idx+1]
+            
             # Trailing comma fix
             cleaned_text = re.sub(r',\s*([\]}])', r'\1', cleaned_text) 
+            
+            #  --- THE NEW ARRAY QUOTE FIX --- 
+            # Fixes hallucinated escaped quotes at the START of an array element (e.g. [, \"] )
+            cleaned_text = re.sub(r'([\[,]\s*)\\"', r'\1"', cleaned_text)
+            
+            # Fixes hallucinated escaped quotes at the END of an array element (e.g. [ \", ] )
+            cleaned_text = re.sub(r'\\"(\s*[\],])', r'"\1', cleaned_text)
+            # ------------------------------- 
             
             try:
                 parsed = json.loads(cleaned_text)
@@ -114,9 +123,9 @@ def parse_and_clean_assessment(result_text, questions_config, strategy):
 
         if "rubric" not in q_data or not isinstance(q_data["rubric"], dict):
             q_data["rubric"] = {
-                "Full_Marks": "100% correct.",
-                "Partial_Marks": "Partially correct.",
-                "Zero_Marks": "0% correct."
+                "Excellent": "100% correct.",
+                "Average": "Partially correct.",
+                "Poor": "0% correct."
             }
 
         # 🧹 JANITOR TASK 1: Force perfect Options formatting
@@ -147,7 +156,7 @@ def parse_and_clean_assessment(result_text, questions_config, strategy):
             q_data["options"] = None
 
         # 🧹 JANITOR TASK 2: Clean Rubric Hallucinations
-        for level in ["Full_Marks", "Partial_Marks", "Zero_Marks"]:
+        for level in ["Excellent", "Average", "Poor"]:
             rubric_text = q_data["rubric"].get(level, "N/A")
             clean_rubric = re.sub(r'^\d+/\d+\s*[-:]\s*', '', str(rubric_text))
             q_data["rubric"][level] = clean_rubric
@@ -164,10 +173,10 @@ def parse_and_clean_assessment(result_text, questions_config, strategy):
 
         # Safe fallback for total failures
         if "question" not in q_data or not q_data["question"]:
-            q_data["question"] = f"Error: The AI model failed to generate Item {config.id} correctly."
+            q_data["question"] = f"Error: The json formating crashed so on forntend not shown  {config.id} correctly."
             q_data["answer"] = "N/A"
             q_data["options"] = None
-            q_data["rubric"] = {"Full_Marks": "N/A", "Partial_Marks": "N/A", "Zero_Marks": "N/A"}
+            q_data["rubric"] = {"Excellent": "N/A", "Average": "N/A", "Poor": "N/A"}
 
         final_questions.append(q_data)
 

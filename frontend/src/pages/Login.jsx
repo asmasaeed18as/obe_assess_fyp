@@ -65,7 +65,8 @@ export default function Login() {
         {error && <div className="error-box">{error}</div>}
 
         <p className="login-footer">
-          Don’t have an account? <span onClick={() => navigate("/register")}>Register here</span>
+          Forgotten  Your Username or Password?
+           {/* <span onClick={() => navigate("/register")}>Register here</span> */}
         </p>
       </div>
     </div>
