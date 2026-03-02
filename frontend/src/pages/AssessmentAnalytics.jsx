@@ -10,7 +10,14 @@ const AssessmentAnalytics = () => {
   const [cloChart, setCloChart] = useState([]);
   const [totals, setTotals] = useState({ total_obtained: 0, total_possible: 0 });
 
-  const palette = ['#FF9F59', '#7B61FF', '#1e7d20', '#2AA7A1', '#C05621', '#4C51BF'];
+const palette = [
+  '#A78BFA', // Soft Lavender (Primary)
+  '#5db3e4', // Soft Indigo
+  '#4ADE80', // Soft Emerald
+  '#2DD4BF', // Soft Teal
+  '#F472B6', // Soft Pink
+  '#FB923C'  // Soft Orange
+];
 
   useEffect(() => {
     const loadAnalytics = async () => {

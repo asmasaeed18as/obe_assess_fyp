@@ -42,6 +42,13 @@ const InstructorView = ({ user, data }) => {
                   <span className="stat-label"><Users size={14}/> {course.students_count} Students</span>
                   <button 
                     className="action-pill"
+                    style={{ 
+                      padding: '6px 12px',
+                      fontSize: '0.75rem',  
+                      borderRadius: '8px', 
+                      fontWeight: '600', 
+                      minWidth: 'fit-content'   
+                     }} 
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/dashboard/courses/${course.course_id}/create-assessment`);
