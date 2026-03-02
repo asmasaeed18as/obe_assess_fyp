@@ -18,8 +18,12 @@ const AssessmentCreate = () => {
   const [inputMode, setInputMode] = useState("file");
   const [topicInput, setTopicInput] = useState("");
   const [materialFile, setMaterialFile] = useState(null);
+  const [outlineFile, setOutlineFile] = useState(null);
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [generatedAssessment, setGeneratedAssessment] = useState(null);
 
   useEffect(() => {
     const initData = async () => {
@@ -59,8 +63,10 @@ const AssessmentCreate = () => {
     const newConfig = Array.from({ length: count }, (_, i) => ({
       id: i + 1,
       clo: "",
+      bloom_level: "C1",
       difficulty: "Medium",
       weightage: "5",
+      question_type: assessmentType === "Quiz/MCQs" ? "MCQ" : "Standard",
     }));
 
     setQuestionsConfig(newConfig);
@@ -81,15 +87,86 @@ const AssessmentCreate = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
+    setError("");
+    setSuccess("");
+    setGeneratedAssessment(null);
+
+    if (!selectedCourseId) {
+      setError("Please select a course.");
+      return;
+    }
+    if (!assessmentType) {
+      setError("Please select an assessment type.");
+      return;
+    }
+    if (!numQuestions || numQuestions < 1) {
+      setError("Please enter number of questions.");
+      return;
+    }
+    if (!questionsConfig.length) {
+      setError("Please configure at least one question.");
+      return;
+    }
+    for (let i = 0; i < questionsConfig.length; i += 1) {
+      const q = questionsConfig[i];
+      if (!q.clo) {
+        setError(`Please select CLO for Q${i + 1}.`);
+        return;
+      }
+      if (!q.weightage) {
+        setError(`Please enter marks for Q${i + 1}.`);
+        return;
+      }
+    }
+    if (inputMode === "file" && !materialFile) {
+      setError("Please upload a material file.");
+      return;
+    }
+    if (inputMode === "topic" && !topicInput.trim()) {
+      setError("Please enter a topic.");
+      return;
+    }
+
+    const form = new FormData();
+    form.append("course_id", selectedCourseId);
+    form.append("assessment_type", assessmentType);
+    form.append("questions_config", JSON.stringify(questionsConfig));
+    if (outlineFile) {
+      form.append("outline", outlineFile);
+    }
+    if (inputMode === "file") {
+      form.append("file", materialFile);
+    } else {
+      form.append("topic_input", topicInput);
+    }
+
+    try {
+      setLoading(true);
+      const res = await api.post("/assessment/generate/", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setGeneratedAssessment(res.data);
+      setSuccess("Assessment generated successfully.");
+    } catch (err) {
+      console.error("Assessment generation failed:", err);
+      setError(err?.response?.data?.error || "Failed to generate assessment.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generatedQuestions = generatedAssessment?.result_json?.questions || [];
+
+  const handleDownloadZip = (assessmentId) => {
+    const backendBaseURL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+    window.open(`${backendBaseURL}/api/assessment/download-zip/${assessmentId}/docx/`, "_blank");
   };
 
   return (
     <div className="assessment-container">
       <h1 className="page-title">AI-Powered Assessment Generator</h1>
 
-      <form className="assessment-form" onSubmit={handleSubmit}>
+      <form className="assessment-form" onSubmit={handleSubmit} noValidate>
         <div className="workspace-wrapper">
           
           {/* LEFT COLUMN */}
@@ -126,9 +203,11 @@ const AssessmentCreate = () => {
                   required
                 >
                   <option value="">Assessment Type</option>
-                  <option value="Quiz">Quiz</option>
+                  <option value="Quiz/MCQs">Quiz/MCQs</option>
                   <option value="Assignment">Assignment</option>
                   <option value="Exam">Exam</option>
+                  <option value="Project Report">Project Report</option>
+                  <option value="Lab Manual">Lab Manual</option>
                 </select>
 
                 <input
@@ -217,6 +296,18 @@ const AssessmentCreate = () => {
                       </select>
 
                       <select
+                        value={q.bloom_level}
+                        onChange={(e) =>
+                          handleQuestionConfigChange(index, "bloom_level", e.target.value)
+                        }
+                        className="input-field small"
+                      >
+                        {["C1","C2","C3","C4","C5","C6"].map((lvl) => (
+                          <option key={lvl} value={lvl}>{lvl}</option>
+                        ))}
+                      </select>
+
+                      <select
                         value={q.difficulty}
                         onChange={(e) =>
                           handleQuestionConfigChange(index, "difficulty", e.target.value)
@@ -237,6 +328,18 @@ const AssessmentCreate = () => {
                         className="input-field small"
                         placeholder="Marks"
                       />
+                      {assessmentType === "Quiz/MCQs" && (
+                        <select
+                          value={q.question_type || "MCQ"}
+                          onChange={(e) =>
+                            handleQuestionConfigChange(index, "question_type", e.target.value)
+                          }
+                          className="input-field small"
+                        >
+                          <option value="MCQ">MCQ</option>
+                          <option value="Short Question">Short Question</option>
+                        </select>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -255,6 +358,63 @@ const AssessmentCreate = () => {
           </button>
         </div>
       </form>
+      {error && <p className="error-msg">{error}</p>}
+      {success && <p className="success-msg">{success}</p>}
+
+      {generatedAssessment && (
+        <div className="assessment-form" style={{ marginTop: "20px" }}>
+          <div className="card-section">
+            <label className="section-label">Generated Assessment</label>
+            <div className="action-bar" style={{ justifyContent: "flex-start", gap: "10px" }}>
+              <button
+                type="button"
+                className="generate-btn"
+                onClick={() => handleDownloadZip(generatedAssessment.id)}
+              >
+                Download ZIP
+              </button>
+              <button
+                type="button"
+                className="generate-btn"
+                onClick={() => window.location.assign(`/dashboard/courses/${selectedCourseId}`)}
+              >
+                View In Course
+              </button>
+            </div>
+          </div>
+
+          <div className="card-section">
+            <label className="section-label">Questions Preview</label>
+            {generatedQuestions.length > 0 ? (
+              <div className="questions-list">
+                {generatedQuestions.map((q, index) => (
+                  <div key={q.id || index} className="question-row" style={{ alignItems: "flex-start" }}>
+                    <span className="q-index">Q{index + 1}</span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%" }}>
+                      <div>{q.question || "Question text not available."}</div>
+                      <div style={{ fontSize: "0.9rem", opacity: 0.8 }}>
+                        Marks: {q.marks || "N/A"}{" "}
+                        {q.meta?.clo ? `| CLO: ${q.meta.clo}` : ""}
+                        {q.meta?.bloom ? ` | Bloom: ${q.meta.bloom}` : ""}
+                        {q.meta?.difficulty ? ` | Difficulty: ${q.meta.difficulty}` : ""}
+                      </div>
+                      {Array.isArray(q.options) && q.options.length > 0 && (
+                        <div style={{ fontSize: "0.9rem", opacity: 0.85 }}>
+                          {q.options.join("  ")}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state-card">
+                <p>No questions returned by the generator.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
