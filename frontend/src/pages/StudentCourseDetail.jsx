@@ -31,9 +31,22 @@ const StudentCourseDetail = () => {
     fetchCourseData();
   }, [id]);
 
-  const handleDownloadZip = (assessmentId) => {
-    const backendBaseURL = "http://127.0.0.1:8000";
-    window.open(`${backendBaseURL}/api/assessment/download-zip/${assessmentId}/docx/`, "_blank");
+  const handleDownloadZip = async (assessmentId) => {
+    try {
+      const res = await api.get(`/assessment/download-zip/${assessmentId}/docx/`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Assessment_Bundle_${assessmentId}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Zip download failed:", err);
+    }
   };
 
   if (loading) return <div className="p-8">Loading Course Info...</div>;
