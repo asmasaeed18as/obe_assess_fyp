@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import "../styles/AssessmentCreate.css";
+import {
+  subscribeAssessmentGeneration,
+  startAssessmentGeneration,
+  clearAssessmentGeneration,
+  getAssessmentGenerationState,
+  hasAssessmentGenerationInFlight,
+} from "../utils/assessmentGenerationStore";
 
 const AssessmentCreate = () => {
   const { courseId: paramCourseId } = useParams();
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
   const [selectedCourseId, setSelectedCourseId] = useState(paramCourseId || "");
@@ -24,6 +32,7 @@ const AssessmentCreate = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [generatedAssessment, setGeneratedAssessment] = useState(null);
+  const [generationState, setGenerationState] = useState(getAssessmentGenerationState());
 
   useEffect(() => {
     const initData = async () => {
@@ -42,6 +51,34 @@ const AssessmentCreate = () => {
     };
     initData();
   }, [paramCourseId]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeAssessmentGeneration((state) => {
+      setGenerationState(state);
+      if (state.status === "in_progress") {
+        setLoading(true);
+        setError("");
+        setSuccess("Assessment generation in progress...");
+        setGeneratedAssessment(null);
+      } else if (state.status === "completed") {
+        setLoading(false);
+        setError("");
+        setSuccess("Assessment generated successfully.");
+        if (state.result) {
+          setGeneratedAssessment(state.result);
+        }
+      } else if (state.status === "error") {
+        setLoading(false);
+        setError(state.error || "Failed to generate assessment.");
+        setSuccess("");
+      } else {
+        setLoading(false);
+        setError("");
+        setSuccess("");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchClos = async () => {
@@ -141,25 +178,31 @@ const AssessmentCreate = () => {
     }
 
     try {
-      setLoading(true);
-      const res = await api.post("/assessment/generate/", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setGeneratedAssessment(res.data);
-      setSuccess("Assessment generated successfully.");
+      await startAssessmentGeneration(form, selectedCourseId);
     } catch (err) {
       console.error("Assessment generation failed:", err);
-      setError(err?.response?.data?.error || "Failed to generate assessment.");
-    } finally {
-      setLoading(false);
     }
   };
 
   const generatedQuestions = generatedAssessment?.result_json?.questions || [];
+  const viewCourseId = selectedCourseId || generationState.courseId;
 
-  const handleDownloadZip = (assessmentId) => {
-    const backendBaseURL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
-    window.open(`${backendBaseURL}/api/assessment/download-zip/${assessmentId}/docx/`, "_blank");
+  const handleDownloadZip = async (assessmentId) => {
+    try {
+      const res = await api.get(`/assessment/download-zip/${assessmentId}/docx/`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Assessment_Bundle_${assessmentId}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Zip download failed:", err);
+    }
   };
 
   return (
@@ -360,6 +403,11 @@ const AssessmentCreate = () => {
       </form>
       {error && <p className="error-msg">{error}</p>}
       {success && <p className="success-msg">{success}</p>}
+      {generationState.status === "in_progress" && !hasAssessmentGenerationInFlight() && (
+        <p className="error-msg">
+          A generation request was in progress, but this page was refreshed. Please check the course assessments or generate again.
+        </p>
+      )}
 
       {generatedAssessment && (
         <div className="assessment-form" style={{ marginTop: "20px" }}>
@@ -376,9 +424,17 @@ const AssessmentCreate = () => {
               <button
                 type="button"
                 className="generate-btn"
-                onClick={() => window.location.assign(`/dashboard/courses/${selectedCourseId}`)}
+                onClick={() => viewCourseId && navigate(`/dashboard/courses/${viewCourseId}`)}
+                disabled={!viewCourseId}
               >
                 View In Course
+              </button>
+              <button
+                type="button"
+                className="generate-btn"
+                onClick={() => clearAssessmentGeneration()}
+              >
+                Clear Status
               </button>
             </div>
           </div>
