@@ -1,60 +1,62 @@
 import io
-import pdfplumber
+import fitz  # PyMuPDF
+import pymupdf4llm
 from docx import Document
 
 def extract_text_from_file(file_obj, filename):
     """
-    Extracts text from PDF or DOCX while PRESERVING TABLE STRUCTURES.
-    This is crucial for ML models to understand columns (CLO | PLO | BT Level).
+    State-of-the-Art LLM Extraction:
+    Converts PDFs and DOCX files into pure Markdown.
+    LLMs natively understand Markdown tables, completely eliminating hallucination.
     """
-    extracted_text = []
     file_ext = filename.lower().split('.')[-1]
 
     try:
         file_obj.seek(0)
         file_bytes = file_obj.read()
 
+        # ==========================================
+        # 1. PDF EXTRACTION (The LLM Standard)
+        # ==========================================
         if file_ext == 'pdf':
-            with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-                for page in pdf.pages:
-                    # 1. Extract plain text
-                    text = page.extract_text()
-                    if text:
-                        extracted_text.append(text)
-                    
-                    # 2. Extract tables and format them with ' | ' separators
-                    tables = page.extract_tables()
-                    for table in tables:
-                        for row in table:
-                            # Clean empty cells and join with a pipe
-                            clean_row = [str(cell).replace('\n', ' ').strip() for cell in row if cell]
-                            if clean_row:
-                                extracted_text.append(" | ".join(clean_row))
+            # Open the PDF stream directly from memory
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            
+            # Convert the entire document (including tables) into perfectly formatted Markdown
+            md_text = pymupdf4llm.to_markdown(doc)
+            return md_text
 
+        # ==========================================
+        # 2. DOCX EXTRACTION (Formatted as Markdown)
+        # ==========================================
         elif file_ext in ['docx', 'doc']:
             doc = Document(io.BytesIO(file_bytes))
+            extracted_text = []
             
-            # 1. Extract paragraphs
+            # Extract paragraphs
             for p in doc.paragraphs:
                 if p.text.strip():
                     extracted_text.append(p.text.strip())
             
-            # 2. Extract tables
+            # Extract tables and format them as Markdown tables so the LLM understands them
             for table in doc.tables:
-                for row in table.rows:
-                    clean_row = [cell.text.replace('\n', ' ').strip() for cell in row.cells if cell.text.strip()]
+                extracted_text.append("\n") # Add spacing before table
+                for i, row in enumerate(table.rows):
+                    clean_row = list(dict.fromkeys([cell.text.replace('\n', ' ').strip() for cell in row.cells if cell.text.strip()]))
                     if clean_row:
-                        extracted_text.append(" | ".join(clean_row))
+                        # Format as a Markdown row: | Column 1 | Column 2 |
+                        extracted_text.append("| " + " | ".join(clean_row) + " |")
+                        
+                        # Add the Markdown header separator after the first row
+                        if i == 0:
+                            extracted_text.append("|" + "|".join(["---"] * len(clean_row)) + "|")
+                extracted_text.append("\n")
+
+            return "\n".join(extracted_text)
+
         else:
             raise ValueError("Unsupported file format.")
-
-        return "\n".join(extracted_text)
 
     except Exception as e:
         print(f"Extraction Error: {str(e)}")
         return ""
-    finally:
-        try:
-            file_obj.close()
-        except Exception:
-            pass

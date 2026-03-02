@@ -117,23 +117,56 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* === FILE UPLOAD === */
+/* --- Enhanced File Upload Dropzone --- */
 .file-upload-zone {
-  padding: 20px;
-  border-radius: 14px;
-  border: 2px dashed var(--glass-border);
-  background: rgba(255, 255, 255, 0.3);
+  border: 2px dashed #8b5cf6; /* Nice theme purple */
+  background-color: #f5f3ff;
+  border-radius: 12px;
+  padding: 30px 20px;
   text-align: center;
   cursor: pointer;
-  color: var(--text-muted);
-  transition: 0.3s;
+  transition: all 0.2s ease-in-out;
+  margin-top: 15px;
 }
 
 .file-upload-zone:hover {
-  background: white;
-  border-color: var(--primary);
+  background-color: #ede9fe;
+  border-color: #7c3aed;
+  transform: scale(0.99); /* Tiny click-press effect */
 }
 
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.upload-icon {
+  font-size: 32px;
+  margin-bottom: 5px;
+}
+
+.upload-main-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #5b21b6;
+  margin: 0;
+}
+
+.upload-sub-text {
+  font-size: 12px;
+  color: #8b5cf6;
+  margin: 0;
+}
+
+/* Make it look green when a file is selected */
+.upload-content.success .upload-main-text {
+  color: #047857;
+}
+.upload-content.success .upload-sub-text {
+  color: #10b981;
+}
 /* === QUESTIONS GRID === */
 .questions-list {
   display: grid;

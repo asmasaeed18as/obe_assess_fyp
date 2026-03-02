@@ -1,4 +1,3 @@
-# users/views.py
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,10 +7,30 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 
+# 🛡️ NEW: Custom Permission to check if the user is an Admin
+class IsAdminRole(permissions.BasePermission):
+    def has_permission(self, request, view):
+        # Only allow access if the user is logged in AND their role is 'admin'
+        return bool(request.user and request.user.is_authenticated and request.user.role == 'admin')
+
+# 🛑 UPDATED: This is now Admin-Only! Public signups are completely blocked.
 class RegisterView(generics.CreateAPIView):
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (IsAdminRole,) 
     serializer_class = RegisterSerializer
     queryset = User.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        # Standard DRF creation
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        
+        # Return a nice, clean success message for the React frontend
+        return Response({
+            "message": f"✅ {user.role.capitalize()} account created successfully!",
+            "user_id": user.id,
+            "email": user.email
+        }, status=status.HTTP_201_CREATED)
 
 class ObtainTokenPairWithUserView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -51,11 +70,12 @@ class ChangePasswordView(APIView):
         user.save()
         return Response({"detail": "Password updated."}, status=status.HTTP_200_OK)
 
-# Optional: Admin list of users
+# Admin list of users
 class UserListView(generics.ListAPIView):
-    permission_classes = (permissions.IsAdminUser,)
+    permission_classes = (IsAdminRole,) # Also updated this to use the strict role check!
     serializer_class = UserSerializer
     queryset = User.objects.all()
+
 class DashboardDataView(APIView):
     """
     GET /api/users/dashboard/

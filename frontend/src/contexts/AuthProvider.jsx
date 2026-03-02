@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useContext } from "react";
 import AuthContext from "./AuthContext";
 import api from "../api/axios";
 import { jwtDecode } from "jwt-decode";
@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
   };
 
   // REGISTER
-  const register = (data) => api.post("/users/register/", data);
+  // const register = (data) => api.post("/users/register/", data);
 
   // UPDATE PROFILE
   const updateProfile = async (data) => {
@@ -51,8 +51,10 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
+  
 }
+
