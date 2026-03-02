@@ -9,7 +9,7 @@ const InstructorView = ({ user, data }) => {
   return (
     <div className="instructor-content">
       <header className="page-header">
-        <h1>Professor {user?.last_name || user?.username || ""}</h1>
+        <h1>Professor {user?.First_name || user?.username || ""}</h1>
         <p className="subtitle">Welcome back to your AI Powered OBE Assessemnt System</p>
       </header>
 
@@ -34,7 +34,7 @@ const InstructorView = ({ user, data }) => {
                 <p className="course-code-text">{course.code} • {course.section_name}</p>
                 
                 <div className="enrollment-tag">
-                  <small>ENROLL CODE</small>
+                  <small>Enrollment Code</small>
                   <code>{course.enrollment_code || "N/A"}</code>
                 </div>
 

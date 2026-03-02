@@ -208,10 +208,23 @@ class MyEnrollmentsView(generics.ListAPIView):
 # ==========================================
 
 class CourseListView(generics.ListAPIView):
-    """List all Generic Courses (Catalog)"""
-    queryset = Course.objects.all()
+    """
+    List all Generic Courses.
+    - If authenticated as instructor: returns only courses where instructor has active sections
+    - If not authenticated: returns all courses
+    """
     serializer_class = CourseSerializer
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated and self.request.user.role == 'instructor':
+            # Get courses where this instructor has active course sections
+            from django.db.models import Q
+            return Course.objects.filter(
+                sections__instructor=self.request.user
+            ).distinct()
+        # For non-instructors, return all courses
+        return Course.objects.all()
 
 # ✅ ADD THIS NEW VIEW
 class CourseDetailView(generics.RetrieveAPIView):

@@ -21,7 +21,7 @@ const AssessmentCreate = () => {
   const [courseTitle, setCourseTitle] = useState("");
 
   const [assessmentType, setAssessmentType] = useState("");
-  const [numQuestions, setNumQuestions] = useState(0);
+  const [numQuestions, setNumQuestions] = useState("");
   const [questionsConfig, setQuestionsConfig] = useState([]);
   const [availableClos, setAvailableClos] = useState([]);
 
@@ -100,8 +100,9 @@ const AssessmentCreate = () => {
 
   // --- HANDLERS ---
   const handleNumQuestionsChange = (e) => {
-    const count = parseInt(e.target.value) || 0;
-    setNumQuestions(count);
+    const value = e.target.value;
+    const count = value ? parseInt(value) : 0;
+    setNumQuestions(value); // Keep the raw value (can be empty string)
 
     const newConfig = Array.from({ length: count }, (_, i) => ({
       id: i + 1,
@@ -264,7 +265,7 @@ const AssessmentCreate = () => {
               value={numQuestions}
               onChange={handleNumQuestionsChange}
               className="input-field"
-              placeholder="Questions"
+              placeholder="Number of questions"
               min="1"
               max="20"
               required
@@ -376,7 +377,7 @@ const AssessmentCreate = () => {
                     required
                   >
                     <option value="">Bloom</option>
-                    {['C1','C2','C3','C4','C5','C6'].map(lvl => (
+                    {['C1','C2','C3','C4','C5','C6','P2','P3','P4','P5','P6','P7','A1','A2','A3','A4','A5'].map(lvl => (
                       <option key={lvl} value={lvl}>{lvl}</option>
                     ))}
                   </select>
