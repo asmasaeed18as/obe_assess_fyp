@@ -104,27 +104,61 @@ body {
 .user-card-mini {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 18px;
-  margin-bottom: 12px;
+  gap: 12px;           /* Increased from default */
+  padding: 12px;       /* Give it internal spacing */
+  background: rgba(255, 255, 255, 0.5); /* Semi-transparent glass effect */
+  border-radius: 12px;
+  margin-bottom: 10px;
+  width: 100%;         /* Ensure it fills the sidebar width */
 }
 
 .avatar-circle {
-  width: 40px;
+  width: 40px;         /* Increased from roughly 30px */
   height: 40px;
-  background: var(--primary);
-  color: white;
-  border-radius: 12px;
+  min-width: 40px;     /* Prevents shrinking in flex layouts */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--accent)); /* Use your primary theme purple */
+  color: white;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
-.u-name { font-weight: 600; font-size: 0.9rem; margin: 0; }
-.u-role { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
+.user-info {
+  display: flex;
+  flex-direction: column;
+  /* Allow the container to take up remaining space */
+  flex: 1; 
+  /* Crucial: allows children to truncate instead of pushing width */
+  min-width: 0; 
+  margin-left: 4px;
+}
+
+.u-role {
+  font-size: 0.55rem;
+  color: #6c757d;
+  margin: 0;
+  
+  /* The "Truncation Trio" */
+  white-space: nowrap;      /* Prevents text from wrapping to a new line */
+  overflow: hidden;         /* Hides the text that overflows the container */
+  text-overflow: ellipsis;  /* Adds the "..." at the end */
+  
+  /* Ensure it spans the container width */
+  width: 100%; 
+}
+
+.u-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e1e2d;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .logout-btn {
   width: 100%;
@@ -389,29 +423,52 @@ body {
   box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);
 }
 
-/* Enroll Card Action Area */
+/* 1. The Container: This is the actual "Box" */
 .enroll-action-box {
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px dashed rgba(0,0,0,0.1);
   display: flex;
-  gap: 10px;
+  align-items: center;
+  background: #ffffff; /* Or your glass effect */
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 4px 4px 4px 12px; /* 12px left padding for text start */
+  margin-top: 15px;
+  width: 100%;
+  max-width: 400px; /* Adjust based on your card size */
+  transition: border-color 0.2s;
 }
 
+.enroll-action-box:focus-within {
+  border-color: #7b61ff;
+  box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.1);
+}
+
+/* 2. The Input: Remove borders and tell it to fill the gap */
+.glass-input-small {
+  border: none !important;      /* Remove default border */
+  outline: none !important;     /* Remove focus ring */
+  background: transparent !important;
+  flex: 1;                      /* This pushes the button to the right */
+  font-size: 0.9rem;
+  color: #1e1e2d;
+  min-width: 0;                 /* Prevents input from pushing box width */
+}
+
+/* 3. The Button: Sitting inside the box */
 .join-btn {
-  background: var(--primary);
+  background: var(--primary);/* Your primary color */
   color: white;
   border: none;
-  padding: 0 20px;
-  border-radius: 10px;
-  font-weight: bold;
+  padding: 8px 20px;
+  border-radius: 8px; /* Slightly smaller than container radius */
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
+  transition: background 0.2s;
+  white-space: nowrap; /* Keeps "Join" on one line */
 }
 
-.join-btn:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px);
+.join-btn:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
 }
 
 /* Space between Selection Area and the Semester results */

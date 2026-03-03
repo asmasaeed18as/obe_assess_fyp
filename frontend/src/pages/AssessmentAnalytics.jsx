@@ -14,7 +14,14 @@ const AssessmentAnalytics = () => {
   const [coursesList, setCoursesList] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
 
-  const palette = ["#FF9F59", "#7B61FF", "#1e7d20", "#2AA7A1", "#C05621", "#4C51BF"];
+  const palette = [
+    "#A78BFA",
+    "#5db3e4",
+    "#4ADE80",
+    "#2DD4BF",
+    "#F472B6",
+    "#FB923C",
+  ];
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -189,7 +196,7 @@ const AssessmentAnalytics = () => {
           </div>
         </div>
 
-        <div className="action-bar-centered" style={{ marginTop: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="action-bar-centered" style={{ marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
           <div className="score-summary-badge" style={{ margin: 0 }}>
             Cumulative Score: {totals.total_obtained} / {totals.total_possible}
           </div>

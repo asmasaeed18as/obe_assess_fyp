@@ -1,0 +1,6 @@
+# Normalize line endings: store LF in repo, checkout native on each OS
+* text=auto
+
+# Force Python files to use LF in the repo and working tree if desired
+# Uncomment to enforce LF on checkout on all platforms:
+# *.py text eol=lf

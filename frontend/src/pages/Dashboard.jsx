@@ -65,11 +65,13 @@ export default function DashboardLayout() {
         <div className="sidebar-footer">
           <div className="user-card-mini">
             <div className="avatar-circle">
-              {user?.username?.[0].toUpperCase() || "U"}
+              {user?.first_name ? user.first_name[0].toUpperCase() : (user?.username ? user.username[0].toUpperCase() : "U")}
             </div>
             <div className="user-info">
-              <p className="u-name">{user?.last_name || user?.username}</p>
-              <p className="u-role">{user.role}</p>
+              <p className="u-name">
+                {[user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.username || "User"}
+              </p>
+              <p className="u-role">{user?.email}</p>
             </div>
           </div>
           <button className="logout-btn" onClick={handleLogout}>

@@ -62,15 +62,15 @@
 }
 
 .btn-purple, .action-pill.purple { 
-  background-color: #8b5cf6; 
+  background-color: #8B61A1;
   color: white; 
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 .btn-green { 
-  background-color: #10b981; 
+  background-color: #8B61A1;
   color: white; 
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 /* Purple Outline Button for Course Registration */
