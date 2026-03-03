@@ -13,6 +13,7 @@ from .models import (
 )
 from assessment_creation.models import Assessment
 from assessment_marking.models import GradedSubmission
+from assessment_marking.utils import remap_course_submissions
 
 # Import Serializers
 from .serializers import (
@@ -160,6 +161,8 @@ class CourseCLOAnalyticsView(APIView):
 
     def get(self, request, pk, *args, **kwargs):
         course = get_object_or_404(Course, pk=pk)
+        # Ensure CLO mapping is up to date for this course before computing analytics
+        remap_course_submissions(course)
 
         # Threshold (default 60%) - can be overridden by query param ?threshold=70
         try:
@@ -170,6 +173,8 @@ class CourseCLOAnalyticsView(APIView):
         # Build question -> CLO mapping from saved Assessments for this course
         question_map = []  # list of dicts: {'text':..., 'clo':..., 'possible': int}
         assessments = Assessment.objects.filter(course=course)
+        latest_assessment = assessments.order_by('-created_at').first()
+        clo_by_index = []
         for a in assessments:
             r = a.result_json or {}
             qs = r.get('questions', []) if isinstance(r, dict) else []
@@ -182,6 +187,18 @@ class CourseCLOAnalyticsView(APIView):
                 except Exception:
                     possible = 0
                 question_map.append({'text': qtext, 'clo': clo, 'possible': possible})
+
+        if latest_assessment:
+            r = latest_assessment.result_json or {}
+            qs = r.get('questions', []) if isinstance(r, dict) else []
+            try:
+                ordered = sorted(qs, key=lambda x: int(x.get('id')))
+            except Exception:
+                ordered = qs
+            clo_by_index = [
+                ((q.get('meta', {}) if isinstance(q.get('meta', {}), dict) else {}).get('clo') or q.get('clo') or 'UNMAPPED')
+                for q in ordered
+            ]
 
         # Gather graded submissions for this course
         submissions = GradedSubmission.objects.filter(course=course)
@@ -210,19 +227,29 @@ class CourseCLOAnalyticsView(APIView):
                 except Exception:
                     possible = 0
 
-                # Find best mapping by simple normalization/membership
-                mapped_clo = None
+                # Prefer mapped_clo from grading; fallback to question text matching
+                mapped_clo = qdata.get('mapped_clo') or qdata.get('clo')
                 norm_qtext = qtext.lower()
-                for m in question_map:
-                    mq = (m['text'] or '').lower()
-                    if not mq:
-                        continue
-                    if norm_qtext == mq or norm_qtext in mq or mq in norm_qtext:
-                        mapped_clo = m['clo']
-                        # prefer mapping's possible if available
-                        if m.get('possible'):
-                            possible = m.get('possible')
-                        break
+                if not mapped_clo:
+                    for m in question_map:
+                        mq = (m['text'] or '').lower()
+                        if not mq:
+                            continue
+                        if norm_qtext == mq or norm_qtext in mq or mq in norm_qtext:
+                            mapped_clo = m['clo']
+                            # prefer mapping's possible if available
+                            if m.get('possible'):
+                                possible = m.get('possible')
+                            break
+
+                # Final fallback: map by question order (Q1 -> first CLO)
+                if not mapped_clo and clo_by_index:
+                    try:
+                        qnum = int(''.join([c for c in str(qid) if c.isdigit()])) - 1
+                    except Exception:
+                        qnum = None
+                    if qnum is not None and 0 <= qnum < len(clo_by_index):
+                        mapped_clo = clo_by_index[qnum]
 
                 if not mapped_clo:
                     mapped_clo = 'UNMAPPED'
@@ -291,10 +318,37 @@ class CourseCLOAnalyticsView(APIView):
                 'students': students
             }
 
+        # Build chart-friendly list for frontend
+        clo_chart = []
+        avg_values = []
+        for clo, stats in sorted(result.items(), key=lambda x: x[0]):
+            avg = stats.get('average_percent')
+            if isinstance(avg, (int, float)):
+                avg_values.append(avg)
+                clo_chart.append({
+                    'clo': clo,
+                    'obtained': avg,
+                    'possible': 100,
+                    'percent': avg
+                })
+            else:
+                clo_chart.append({
+                    'clo': clo,
+                    'obtained': 0,
+                    'possible': 100,
+                    'percent': 0
+                })
+
+        total_obtained = round(sum(avg_values) / len(avg_values), 2) if avg_values else 0
+        total_possible = 100 if avg_values else 0
+
         return Response({
             'course': {'id': course.id, 'code': course.code, 'title': course.title},
             'threshold': threshold,
-            'clo_attainment': result
+            'clo_attainment': result,
+            'clo_chart': clo_chart,
+            'total_obtained': total_obtained,
+            'total_possible': total_possible
         })
 class UploadOutlineView(APIView):
     """

@@ -1,16 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useGrading } from "../contexts/GradingContext";
+import api from "../api/axios";
 import "../styles/AssessmentCreate.css"; 
 import "../styles/AssessmentGrading.css"; 
 
 const AssessmentGrading = () => {
   const [studentFile, setStudentFile] = useState(null);
   const [rubricFile, setRubricFile] = useState(null);
+  const [coursesList, setCoursesList] = useState([]);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
   const { loading, error, result, results, grade, reset } = useGrading();
   const [validationError, setValidationError] = useState("");
 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await api.get("/courses/");
+        setCoursesList(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        setCoursesList([]);
+      }
+    };
+    fetchCourses();
+  }, []);
+
   const handleGrade = async (e) => {
     e.preventDefault();
+    if (!selectedCourseId) {
+      setValidationError("Please select a course.");
+      return;
+    }
     if (!studentFile) {
       setValidationError("Please upload the student submission (or ZIP for bulk grading).");
       return;
@@ -22,7 +41,7 @@ const AssessmentGrading = () => {
     }
 
     setValidationError("");
-    await grade({ studentFile, rubricFile });
+    await grade({ studentFile, rubricFile, courseId: selectedCourseId });
   };
 
   // Function to clear results and show the upload button again
@@ -30,6 +49,7 @@ const AssessmentGrading = () => {
     reset();
     setStudentFile(null);
     setRubricFile(null);
+    setSelectedCourseId("");
   };
 
   return (
@@ -42,6 +62,23 @@ const AssessmentGrading = () => {
       {/* Only show the form if no result exists */}
       {!result && results.length === 0 && (
         <form className="assessment-form" onSubmit={handleGrade}>
+          <div className="card-section">
+            <label className="section-label">Select Course</label>
+            <select
+              className="input-field"
+              value={selectedCourseId}
+              onChange={(e) => setSelectedCourseId(e.target.value)}
+              required
+            >
+              <option value="">Choose a Course</option>
+              {coursesList.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.code} - {course.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="card-section">
             <label className="section-label">Upload Documents</label>
             <div className="upload-grid-row">

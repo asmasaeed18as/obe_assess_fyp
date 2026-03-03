@@ -162,6 +162,9 @@ const InstructorCourseDetail = () => {
           <button className="action-pill" onClick={() => navigate(`/dashboard/courses/${id}/create-assessment`)}>
             + Create New
           </button>
+          <button className="action-pill" onClick={() => navigate(`/dashboard/analytics/${id}`)}>
+            View Analytics
+          </button>
           </div>
         </div>
 
@@ -180,6 +183,18 @@ const InstructorCourseDetail = () => {
           ) : (
             <div className="empty-state-glass"><p>No assessments created yet.</p></div>
           )}
+        </div>
+      </section>
+
+      {/* ---------- Analytics Section ---------- */}
+      <section className="page-section">
+        <div className="section-header stacked">
+          <h3 className="section-subtitle">Analytics</h3>
+          <div className="header-button-container">
+            <button className="action-pill" onClick={() => navigate(`/dashboard/analytics/${id}`)}>
+              View Course Analytics
+            </button>
+          </div>
         </div>
       </section>
     </div>

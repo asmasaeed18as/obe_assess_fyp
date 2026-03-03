@@ -60,7 +60,8 @@ function App() {
                 <Route path="courses/:courseId/create-assessment" element={<AssessmentCreate />} />
                 <Route path="create-assessment" element={<AssessmentCreate />} />
                 <Route path="grading" element={<AssessmentGrading />} />
-                <Route path="analytics" element={<AssessmentAnalytics />} />
+              <Route path="analytics" element={<AssessmentAnalytics />} />
+              <Route path="analytics/:courseId" element={<AssessmentAnalytics />} />
               </Route>
 
               {/* 🛑 STUDENT ONLY (Instructors don't enroll in courses, Admins assign them) */}

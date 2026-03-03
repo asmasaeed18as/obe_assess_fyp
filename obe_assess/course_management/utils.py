@@ -1,7 +1,11 @@
 import io
 import fitz  # PyMuPDF
-import pymupdf4llm
 from docx import Document
+
+try:
+    import pymupdf4llm  # Optional dependency for Markdown extraction
+except Exception:  # ImportError or any env-specific error
+    pymupdf4llm = None
 
 def extract_text_from_file(file_obj, filename):
     """
@@ -21,10 +25,16 @@ def extract_text_from_file(file_obj, filename):
         if file_ext == 'pdf':
             # Open the PDF stream directly from memory
             doc = fitz.open(stream=file_bytes, filetype="pdf")
-            
-            # Convert the entire document (including tables) into perfectly formatted Markdown
-            md_text = pymupdf4llm.to_markdown(doc)
-            return md_text
+
+            # Prefer Markdown extraction if available; otherwise fallback to plain text
+            if pymupdf4llm is not None:
+                return pymupdf4llm.to_markdown(doc)
+
+            # Fallback: extract plain text per page
+            extracted = []
+            for page in doc:
+                extracted.append(page.get_text("text"))
+            return "\n".join(extracted)
 
         # ==========================================
         # 2. DOCX EXTRACTION (Formatted as Markdown)

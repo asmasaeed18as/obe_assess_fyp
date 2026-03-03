@@ -51,6 +51,18 @@ def _build_chart(clo_summary):
         })
     return chart, total_obtained, total_possible
 
+def _aggregate_submissions(submissions):
+    combined = {}
+    for submission in submissions:
+        data = submission.ai_result_json or {}
+        clo_summary = _build_clo_summary(data)
+        for clo, totals in clo_summary.items():
+            agg = combined.setdefault(clo, {'obtained': 0, 'possible': 0})
+            agg['obtained'] += totals.get('obtained', 0) or 0
+            agg['possible'] += totals.get('possible', 0) or 0
+    chart, total_obtained, total_possible = _build_chart(combined)
+    return combined, chart, total_obtained, total_possible
+
 class SubmissionCLOAnalyticsView(APIView):
     permission_classes = [AllowAny]
 
@@ -94,6 +106,19 @@ class BatchSubmissionCLOAnalyticsView(APIView):
         chart, total_obtained, total_possible = _build_chart(combined)
         return Response({
             'submission_ids': ids,
+            'total_obtained': total_obtained,
+            'total_possible': total_possible,
+            'clo_summary': combined,
+            'clo_chart': chart
+        })
+
+class AllSubmissionsCLOAnalyticsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        submissions = GradedSubmission.objects.all()
+        combined, chart, total_obtained, total_possible = _aggregate_submissions(submissions)
+        return Response({
             'total_obtained': total_obtained,
             'total_possible': total_possible,
             'clo_summary': combined,

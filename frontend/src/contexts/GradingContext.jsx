@@ -32,7 +32,7 @@ export const GradingProvider = ({ children }) => {
     localStorage.removeItem("grading_submission_ids");
   }, []);
 
-  const grade = useCallback(async ({ studentFile, rubricFile }) => {
+  const grade = useCallback(async ({ studentFile, rubricFile, courseId }) => {
     const requestId = Date.now();
     activeRequestIdRef.current = requestId;
 
@@ -45,6 +45,10 @@ export const GradingProvider = ({ children }) => {
     formData.append("student_file", studentFile);
     if (rubricFile) {
       formData.append("rubric_file", rubricFile);
+    }
+    if (courseId) {
+      formData.append("course_id", courseId);
+      localStorage.setItem("grading_course_id", courseId);
     }
 
     try {
@@ -89,6 +93,7 @@ export const GradingProvider = ({ children }) => {
     setError("");
     setLoading(false);
     clearIds();
+    localStorage.removeItem("grading_course_id");
   }, [clearIds]);
 
   const loadLastResult = useCallback(async () => {

@@ -12,97 +12,27 @@ from .serializers import GradedSubmissionSerializer
 from .grading_logic.marking_client import mark_assessment_logic # Import logic
 from course_management.models import Course
 from assessment_creation.models import Assessment
+from course_management.models import Course
+from .utils import map_submission_clos, remap_course_submissions
 
 class GradeAssessmentView(APIView):
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = [AllowAny]
 
     def _apply_clo_mapping(self, submission):
-        # --- Attempt to map per_question entries to CLOs when course known ---
-        try:
-            course_obj = submission.course
-            if course_obj:
-                # Build simple question->CLO map from Assessments for this course
-                qmap = []
-                assessments = Assessment.objects.filter(course=course_obj)
-                for a in assessments:
-                    r = a.result_json or {}
-                    qs = r.get('questions', []) if isinstance(r, dict) else []
-                    for q in qs:
-                        qtext = (q.get('question') or '').strip()
-                        meta = q.get('meta', {}) if isinstance(q.get('meta', {}), dict) else {}
-                        clo = meta.get('clo') or q.get('clo') or 'UNMAPPED'
-                        qmap.append({'text': qtext, 'clo': clo})
-
-                per_q = submission.ai_result_json.get('per_question', {}) if isinstance(submission.ai_result_json, dict) else {}
-                for qid, qdata in per_q.items():
-                    qtext = (qdata.get('question') or '').strip()
-                    mapped = None
-                    nq = qtext.lower()
-                    for m in qmap:
-                        mq = (m['text'] or '').lower()
-                        if not mq:
-                            continue
-                        if nq == mq or nq in mq or mq in nq:
-                            mapped = m['clo']
-                            break
-                    if mapped:
-                        qdata['mapped_clo'] = mapped
-
-                # --- compute per-CLO totals and overall totals ---
-                clo_agg = {}  # clo -> {'obtained': int, 'possible': int}
-                total_obtained = 0
-                total_possible = 0
-
-                for qid, qdata in per_q.items():
-                    mapped_clo = qdata.get('mapped_clo') or 'UNMAPPED'
-                    try:
-                        obtained = int(qdata.get('marks_awarded', 0) or 0)
-                    except Exception:
-                        try:
-                            obtained = int(float(qdata.get('marks_awarded', 0) or 0))
-                        except Exception:
-                            obtained = 0
-                    try:
-                        possible = int(qdata.get('max_marks', 0) or 0)
-                    except Exception:
-                        try:
-                            possible = int(float(qdata.get('max_marks', 0) or 0))
-                        except Exception:
-                            possible = 0
-
-                    total_obtained += obtained
-                    total_possible += possible
-
-                    agg = clo_agg.setdefault(mapped_clo, {'obtained': 0, 'possible': 0})
-                    agg['obtained'] += obtained
-                    agg['possible'] += possible
-
-                # attach aggregates into ai_result_json under 'clo_summary' and update top-level summary
-                submission.ai_result_json['per_question'] = per_q
-                submission.ai_result_json['clo_summary'] = clo_agg
-                # prefer existing summary from marking logic but ensure totals are consistent with per-question data
-                summary = submission.ai_result_json.get('summary', {}) if isinstance(submission.ai_result_json.get('summary', {}), dict) else {}
-                summary_total_obtained = summary.get('total_obtained')
-                summary_total_possible = summary.get('total_possible')
-                if summary_total_obtained != total_obtained:
-                    summary['total_obtained'] = total_obtained
-                if not summary_total_possible or summary_total_possible != total_possible:
-                    summary['total_possible'] = total_possible
-                try:
-                    summary['percentage'] = round((summary['total_obtained'] / summary['total_possible'] * 100), 2) if summary.get('total_possible', 0) > 0 else summary.get('percentage', 0)
-                except Exception:
-                    pass
-                submission.ai_result_json['summary'] = summary
-
-                submission.save()
-        except Exception as e:
-            print(f"CLO mapping skipped: {e}")
+        map_submission_clos(submission)
 
     def post(self, request, *args, **kwargs):
         serializer = GradedSubmissionSerializer(data=request.data)
         student_file = request.FILES.get('student_file')
         rubric_file = request.FILES.get('rubric_file')
+        course_id = request.data.get('course_id') or request.data.get('course')
+        if not course_id:
+            return Response({"status": "error", "details": "course_id is required for grading."}, status=400)
+        try:
+            course_obj = Course.objects.get(id=course_id)
+        except Exception:
+            return Response({"status": "error", "details": "Invalid course_id."}, status=400)
 
         # ZIP bulk grading path
         if student_file and str(student_file.name).lower().endswith(".zip"):
@@ -130,14 +60,6 @@ class GradeAssessmentView(APIView):
 
             allowed_exts = (".pdf", ".docx", ".txt")
             results = []
-            course_id = request.data.get('course_id') or request.data.get('course')
-            course_obj = None
-            if course_id:
-                try:
-                    course_obj = Course.objects.get(id=course_id)
-                except Exception:
-                    course_obj = None
-
             for name in zf.namelist():
                 lower = name.lower()
                 if lower.endswith("/") or not lower.endswith(allowed_exts):
@@ -165,21 +87,16 @@ class GradeAssessmentView(APIView):
 
                 results.append(GradedSubmissionSerializer(submission).data)
 
+            remap_course_submissions(course_obj)
             return Response({"status": "success", "data": results})
 
         if serializer.is_valid():
             # 1. Save Files
             submission = serializer.save()
-            # If course_id provided in request, attach it to the submission
-            course_id = request.data.get('course_id') or request.data.get('course')
-            if course_id and not submission.course:
-                try:
-                    course_obj = Course.objects.get(id=course_id)
-                    submission.course = course_obj
-                    submission.save()
-                except Exception:
-                    # ignore if invalid id
-                    pass
+            # Attach course (required)
+            if not submission.course:
+                submission.course = course_obj
+                submission.save()
 
             try:
                 # 2. Get Absolute Paths
@@ -194,6 +111,7 @@ class GradeAssessmentView(APIView):
                 submission.refresh_from_db()
                 self._apply_clo_mapping(submission)
 
+                remap_course_submissions(course_obj)
                 return Response({"status": "success", "data": GradedSubmissionSerializer(submission).data})
             except Exception as e:
                 print(f"Grading Error: {e}")
@@ -202,12 +120,26 @@ class GradeAssessmentView(APIView):
         return Response(serializer.errors, status=400)
 
 
+class CourseSubmissionsDeleteView(APIView):
+    permission_classes = [AllowAny]
+
+    def delete(self, request, course_id, *args, **kwargs):
+        course = get_object_or_404(Course, id=course_id)
+        deleted_count, _ = GradedSubmission.objects.filter(course=course).delete()
+        return Response({"status": "success", "deleted": deleted_count})
+
+
 class GradedSubmissionDetailView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, submission_id, *args, **kwargs):
         submission = get_object_or_404(GradedSubmission, id=submission_id)
         return Response(GradedSubmissionSerializer(submission).data)
+
+    def delete(self, request, submission_id, *args, **kwargs):
+        submission = get_object_or_404(GradedSubmission, id=submission_id)
+        submission.delete()
+        return Response({"status": "success", "detail": "Submission deleted."})
 
 class GradedSubmissionCLOAnalyticsView(APIView):
     permission_classes = [AllowAny]
