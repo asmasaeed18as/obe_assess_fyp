@@ -10,7 +10,7 @@ const InstructorView = ({ user, data }) => {
     <div className="instructor-content">
       <header className="page-header">
         <h1>Professor {user?.First_name || user?.username || ""}</h1>
-        <p className="subtitle">Welcome back to your AI Powered OBE Assessemnt System</p>
+        <p className="subtitle">Welcome back to your AI Powered OBE Assessment System</p>
       </header>
 
       <section className="dashboard-content">

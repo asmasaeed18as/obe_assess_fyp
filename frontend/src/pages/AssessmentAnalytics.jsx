@@ -129,6 +129,10 @@ const AssessmentAnalytics = () => {
     color: palette[idx % palette.length],
   }));
 
+  const handleExportPdf = () => {
+    window.print();
+  };
+
   return (
     <div className="assessment-container" style={{ padding: "20px 40px", height: "100vh", overflow: "hidden", justifyContent: "flex-start" }}>
       <header className="page-header" style={{ marginBottom: "20px" }}>
@@ -200,7 +204,7 @@ const AssessmentAnalytics = () => {
           <div className="score-summary-badge" style={{ margin: 0 }}>
             Cumulative Score: {totals.total_obtained} / {totals.total_possible}
           </div>
-          <button className="generate-btn" style={{ width: "280px" }}>
+          <button className="generate-btn" style={{ width: "280px" }} type="button" onClick={handleExportPdf}>
             Export PDF Report
           </button>
         </div>
