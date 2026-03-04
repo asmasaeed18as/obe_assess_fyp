@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'default-unsafe-key-for-dev')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG') == 'True'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -97,11 +97,9 @@ DATABASES = {
 }
 AUTH_USER_MODEL = 'users.User'  # point to our custom user model
 
-# CORS - allow your React dev origin(s)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",  # if using Vite
-]
+# CORS - allow any origin, method, and header
+CORS_ALLOW_HEADERS = ["*"]
+CORS_ALLOW_METHODS = ["*"]
 
 # REST Framework + JWT config
 from datetime import timedelta
