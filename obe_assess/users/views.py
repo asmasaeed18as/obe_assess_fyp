@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from .models import User
-from .serializers import DashboardDataSerializer, UserSerializer, RegisterSerializer, MyTokenObtainPairSerializer
+from .serializers import DashboardDataSerializer, UserSerializer, RegisterSerializer, AdminRegisterSerializer, MyTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
@@ -17,7 +17,7 @@ class IsAdminRole(permissions.BasePermission):
 
 # 🛑 UPDATED: This is now Admin-Only! Public signups are completely blocked.
 class RegisterView(generics.CreateAPIView):
-    permission_classes = (IsAdminRole,) 
+    permission_classes = (permissions.AllowAny,)
     serializer_class = RegisterSerializer
     queryset = User.objects.all()
 
@@ -30,6 +30,22 @@ class RegisterView(generics.CreateAPIView):
         # Return a nice, clean success message for the React frontend
         return Response({
             "message": f"✅ {user.role.capitalize()} account created successfully!",
+            "user_id": user.id,
+            "email": user.email
+        }, status=status.HTTP_201_CREATED)
+
+class AdminRegisterView(generics.CreateAPIView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = AdminRegisterSerializer
+    queryset = User.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        return Response({
+            "message": "✅ Admin account created successfully!",
             "user_id": user.id,
             "email": user.email
         }, status=status.HTTP_201_CREATED)
