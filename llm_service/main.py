@@ -280,7 +280,7 @@ Standard question and detailed model answer format. 'options' MUST be exactly nu
         "num_ctx": 8192       
     }
     
-    result_text = call_ollama(prompt, model="gemma3:1b", options=ollama_options)
+    result_text = call_ollama(prompt, model=os.getenv("GROQ_MODEL"), options=ollama_options)
 
     print("\n" + "="*50)
     print(f"🤖 RAW LLM OUTPUT ({req.assessment_type}):")
