@@ -1,1 +1,1 @@
-web: gunicorn obe_assess_fyp.wsgi
+gunicorn obe_assess.wsgi
