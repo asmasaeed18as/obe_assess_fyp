@@ -7,8 +7,10 @@ import random
 from response_parser import parse_and_clean_assessment, clean_and_extract_json
 import re
 from fastapi.responses import JSONResponse
+import os
+from openai import OpenAI
 
-app = FastAPI(title="LLM Service with Gemma 3 (Ollama)")
+app = FastAPI(title="LLM Service (Hosted LLM)")
 
 # ==========================================
 # 1. SHARED HELPERS
@@ -16,37 +18,39 @@ app = FastAPI(title="LLM Service with Gemma 3 (Ollama)")
 
 import re
 
-def call_ollama(prompt, model="gemma3:1b", options=None):
+def _get_groq_client():
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set")
+    base_url = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+    return OpenAI(api_key=api_key, base_url=base_url)
+
+
+def call_ollama(prompt, model=None, options=None):
     """
-    Centralized function to call the local Ollama instance.
+    Centralized function to call Groq via the OpenAI-compatible API.
     """
     if options is None:
         options = {
             "temperature": 0.2,
-            "num_ctx": 8192,
-            "num_predict": 3000,
-            "top_k": 40,
             "top_p": 0.9
         }
 
-    print(f"--> Sending request to Ollama ({model})...")
-    
+    model = model or os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
+
+    print(f"--> Sending request to Groq ({model})...")
     try:
-        resp = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": model, 
-                "prompt": prompt, 
-                "stream": False,
-                "options": options
-            },
-            timeout=500 # Extended timeout for long generations
+        client = _get_groq_client()
+        resp = client.responses.create(
+            model=model,
+            input=prompt,
+            temperature=options.get("temperature", 0.2),
+            top_p=options.get("top_p", 0.9),
         )
-        resp.raise_for_status()
-        return resp.json().get("response", "").strip()
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Ollama Connection Error: {e}")
-        raise HTTPException(status_code=500, detail=f"Ollama Error: {str(e)}")
+        return resp.output_text.strip()
+    except Exception as e:
+        print(f"? Groq Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Groq Error: {str(e)}")
 
 # ==========================================
 # 2. FEATURE: ASSESSMENT GENERATION
