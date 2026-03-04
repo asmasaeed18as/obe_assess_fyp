@@ -21,6 +21,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def health_check():
+    return {"status": "LLM Service is live!", "model": "gemma3-1b"}
+
 # ==========================================
 # 1. SHARED HELPERS
 # ==========================================
