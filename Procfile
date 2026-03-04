@@ -1,1 +1,1 @@
-gunicorn obe_assess.wsgi
+web: gunicorn obe_assess.wsgi
