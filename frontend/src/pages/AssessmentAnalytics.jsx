@@ -169,8 +169,8 @@ const AssessmentAnalytics = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={cloData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis unit="%" domain={[0, 100]} axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-main)', fontSize: 12, angle: -45, textAnchor: 'end' }} />
+                <YAxis unit="%" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: 'var(--text-main)', fontSize: 12 }} />
                 <Tooltip
                   contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}
                   cursor={{ fill: "rgba(var(--primary-rgb), 0.05)" }}
@@ -189,8 +189,8 @@ const AssessmentAnalytics = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={cloData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-main)', fontSize: 12, angle: -45, textAnchor: 'end' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-main)', fontSize: 12 }} />
                 <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }} />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: "10px" }} />
                 <Bar name="Obtained" dataKey="obtained" fill="#7B61FF" radius={[6, 6, 0, 0]} barSize={25} />
