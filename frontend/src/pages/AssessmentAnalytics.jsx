@@ -194,7 +194,7 @@ const AssessmentAnalytics = () => {
                 <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }} />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: "10px" }} />
                 <Bar name="Obtained" dataKey="obtained" fill="#7B61FF" radius={[6, 6, 0, 0]} barSize={25} />
-                <Bar name="Possible" dataKey="possible" fill="#E2E8F0" radius={[6, 6, 0, 0]} barSize={25} />
+                <Bar name="Possible" dataKey="possible" fill="#f965b9" radius={[6, 6, 0, 0]} barSize={25} />
               </BarChart>
             </ResponsiveContainer>
           </div>
