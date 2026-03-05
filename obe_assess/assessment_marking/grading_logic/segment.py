@@ -44,7 +44,8 @@ def segment_questions(text):
 
         content_only = re.sub(r"^(?:Q(?:uestion)?\s*\d+[:.)]?)", "", block, flags=re.IGNORECASE).strip()
 
-        # Split Question from Answer
+        # Remove CLO tags like (CLO-1) from the question text
+        content_only = re.sub(r"\(CLO-\d+\)", "", content_only, flags=re.IGNORECASE).strip()
         split_marker = re.split(r"\n(?:(?:Answer|Student Answer|Model Answer|Solution)\s*[:\-])", content_only, flags=re.IGNORECASE)
 
         if len(split_marker) >= 2:
