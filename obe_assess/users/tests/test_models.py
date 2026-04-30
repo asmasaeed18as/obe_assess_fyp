@@ -78,3 +78,11 @@ class CustomUserTests(TestCase):
             password='password123'
         )
         self.assertEqual(str(user), 'test@example.com')
+
+    def test_email_is_normalized_on_create_user(self):
+        user = User.objects.create_user(
+            email='Student@SEECS.edu.pk',
+            password='password123'
+        )
+
+        self.assertEqual(user.email, 'Student@seecs.edu.pk')

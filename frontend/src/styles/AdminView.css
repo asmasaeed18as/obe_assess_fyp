@@ -1,0 +1,9 @@
+.dashboard-hero--admin {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard-hero--admin .subtitle {
+  max-width: 700px;
+}

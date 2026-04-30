@@ -1,0 +1,24 @@
+.dashboard-hero--instructor {
+  align-items: stretch;
+}
+
+.instructor-course-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.instructor-course-card--minimal {
+  min-height: 272px;
+  padding-bottom: 20px;
+}
+
+.instructor-course-card--minimal h3 {
+  font-size: 1.28rem;
+  margin-top: 2px;
+}
+
+@media (max-width: 860px) {
+  .dashboard-hero--instructor {
+    padding: 24px;
+  }
+}

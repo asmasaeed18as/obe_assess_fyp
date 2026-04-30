@@ -36,4 +36,8 @@ dist/
 # Mac / Windows junk
 .DS_Store
 Thumbs.db
-obe_assess/obe_assess/settings.py
+
+# SQLite Database Files (local/development)
+db.sqlite3-journal
+local_dev.sqlite3
+local_dev.sqlite3-journal

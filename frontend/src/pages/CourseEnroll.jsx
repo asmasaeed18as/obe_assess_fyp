@@ -81,8 +81,9 @@ const CourseEnroll = () => {
       <div className="glass-card mb-8">
         <div className="filters-container-row">
           <div className="filter-input-group">
-            <label>Department</label>
+            <label htmlFor="department-select">Department</label>
             <select 
+              id="department-select"
               className="glass-select"
               value={selectedDept} 
               onChange={(e) => { 
@@ -97,8 +98,9 @@ const CourseEnroll = () => {
           </div>
 
           <div className="filter-input-group">
-            <label>Program</label>
+            <label htmlFor="program-select">Program</label>
             <select 
+              id="program-select"
               className="glass-select"
               value={selectedProgram} 
               onChange={(e) => { 

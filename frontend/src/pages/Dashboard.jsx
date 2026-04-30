@@ -4,6 +4,7 @@ import AuthContext from "../contexts/AuthContext";
 // Added LayoutDashboard for the Admin link icon
 import { Home, FilePlus, GraduationCap, BarChart2, Settings, LogOut, LayoutDashboard } from "lucide-react"; 
 import "../styles/Dashboard.css";
+import "../styles/DashboardLayout.css";
 import logo from "../assets/obe-logo.png";
 
 export default function DashboardLayout() {
@@ -24,7 +25,9 @@ export default function DashboardLayout() {
           <div className="logo-box">
              <img src={logo} alt="Logo" style={{width: '32px'}} />
           </div>
-          <span className="brand-name">OBE-Assess</span>
+          <div className="brand-lockup">
+            <span className="brand-name">OBE-Assess</span>
+          </div>
         </div>
         
         <nav className="sidebar-menu">

@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import api from "../api/axios";
 import "../styles/AssessmentCreate.css";
 import "../styles/AssessmentGrading.css";
+import ThemedSelect from "../components/ThemedSelect";
 
 const AssessmentAnalytics = () => {
   const { courseId: paramCourseId } = useParams();
@@ -23,6 +24,14 @@ const AssessmentAnalytics = () => {
     "#FB923C",
   ];
 
+  const courseOptions = [
+    { value: "__all__", label: "All Courses" },
+    ...coursesList.map((course) => ({
+      value: String(course.id),
+      label: `${course.code} - ${course.title}${course.section_name ? ` (${course.section_name})` : ""}`,
+    })),
+  ];
+
   useEffect(() => {
     const loadCourses = async () => {
       try {
@@ -31,7 +40,7 @@ const AssessmentAnalytics = () => {
           api.get("/users/dashboard-data/"),
         ]);
 
-        const allCourses = Array.isArray(coursesRes.data) ? coursesRes.data : [];
+        const allCourses = Array.isArray(coursesRes.data) ? coursesRes.data : (coursesRes.data?.results || []);
         const dashCourses = Array.isArray(dashRes.data?.courses) ? dashRes.data.courses : [];
 
         const byId = new Map();
@@ -66,7 +75,7 @@ const AssessmentAnalytics = () => {
       } catch (err) {
         try {
           const res = await api.get("/courses/");
-          setCoursesList(Array.isArray(res.data) ? res.data : []);
+          setCoursesList(Array.isArray(res.data) ? res.data : (res.data?.results || []));
         } catch {
           setCoursesList([]);
         }
@@ -143,18 +152,13 @@ const AssessmentAnalytics = () => {
       <div className="assessment-form" style={{ maxWidth: "1000px", height: "calc(100% - 120px)", background: "transparent", padding: "0", display: "flex", flexDirection: "column", gap: "20px" }}>
         <div className="card-section">
           <label className="section-label">Select Course</label>
-          <select
-            className="input-field"
+          <ThemedSelect
+            className="input-field themed-field field-lg"
             value={selectedCourseId}
             onChange={(e) => setSelectedCourseId(e.target.value)}
-          >
-            <option value="__all__">All Courses</option>
-            {coursesList.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.code} - {course.title}{course.section_name ? ` (${course.section_name})` : ""}
-              </option>
-            ))}
-          </select>
+            options={courseOptions}
+            placeholder="Select Course"
+          />
         </div>
 
         {error && (

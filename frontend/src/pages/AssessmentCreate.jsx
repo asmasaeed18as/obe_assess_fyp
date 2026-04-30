@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import "../styles/AssessmentCreate.css";
+import ThemedSelect from "../components/ThemedSelect";
 import {
   subscribeAssessmentGeneration,
   startAssessmentGeneration,
@@ -37,13 +38,43 @@ const AssessmentCreate = () => {
   const [generatedAssessment, setGeneratedAssessment] = useState(null);
   const [generationState, setGenerationState] = useState(getAssessmentGenerationState());
 
+  const courseOptions = coursesList.map((course) => ({
+    value: course.id,
+    label: `${course.code} - ${course.title}`,
+  }));
+
+  const assessmentTypeOptions = [
+    { value: "Quiz/MCQs", label: "Quiz/MCQs" },
+    { value: "Assignment", label: "Assignment" },
+    { value: "Exam", label: "Exam" },
+    { value: "Project Report", label: "Project Report" },
+    { value: "Lab Manual", label: "Lab Manual" },
+  ];
+
+  const questionTypeOptions = [
+    { value: "MCQ", label: "MCQ" },
+    { value: "Short Question", label: "Short" },
+  ];
+
+  const bloomLevelOptions = ["C1","C2","C3","C4","C5","C6","P2","P3","P4","P5","P6","P7","A1","A2","A3","A4","A5"].map((lvl) => ({
+    value: lvl,
+    label: lvl,
+  }));
+
+  const difficultyOptions = [
+    { value: "Easy", label: "Easy" },
+    { value: "Medium", label: "Medium" },
+    { value: "Hard", label: "Hard" },
+  ];
+
   // --- EFFECTS ---
   useEffect(() => {
     const initData = async () => {
       try {
         if (!paramCourseId) {
           const res = await api.get("/courses/");
-          setCoursesList(res.data);
+          const coursesData = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+          setCoursesList(coursesData);
         } else {
           setSelectedCourseId(paramCourseId);
           const res = await api.get(`/courses/${paramCourseId}/`);
@@ -196,8 +227,12 @@ const AssessmentCreate = () => {
     }
   };
 
-  const generatedQuestions = generatedAssessment?.result_json?.questions || [];
-  const viewCourseId = selectedCourseId || generationState.courseId;
+	  const generatedQuestions = generatedAssessment?.result_json?.questions || [];
+	  const viewCourseId = selectedCourseId || generationState.courseId;
+  const hasCompletedGeneration =
+    generationState.status === "completed" &&
+    Boolean(generatedAssessment) &&
+    Boolean(generatedAssessment?.id);
 
   const handleDownloadZip = async (assessmentId) => {
     try {
@@ -222,45 +257,33 @@ const AssessmentCreate = () => {
       <h1 className="page-title">AI-Powered Assessment Generator</h1>
 
       <form className="assessment-form" onSubmit={handleSubmit} noValidate>
-        <div className="card-section">
-          <label className="section-label">Select Course</label>
-          {!paramCourseId ? (
-            <select
-              className="input-field"
-              value={selectedCourseId}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
-              required
-            >
-              <option value="">Choose a Course</option>
-              {coursesList.map(course => (
-                <option key={course.id} value={course.id}>
-                  {course.code} - {course.title}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <div className="course-display-name">{courseTitle}</div>
-          )}
-        </div>
+	        <div className="card-section">
+	          <label className="section-label">Select Course</label>
+	          {!paramCourseId ? (
+	            <ThemedSelect
+	              className="input-field themed-field field-lg"
+	              value={selectedCourseId}
+	              onChange={(e) => setSelectedCourseId(e.target.value)}
+	              options={courseOptions}
+	              placeholder="Choose a Course"
+	            />
+	          ) : (
+	            <div className="course-display-name">{courseTitle}</div>
+	          )}
+	        </div>
 
-        <div className="card-section">
-          <label className="section-label">Assessment Details</label>
-          <div className="grid-row">
-            <select
-              value={assessmentType}
-              onChange={(e) => setAssessmentType(e.target.value)}
-              className="input-field"
-              required
-            >
-              <option value="">Assessment Type</option>
-              <option value="Quiz/MCQs">Quiz/MCQs</option>
-              <option value="Assignment">Assignment</option>
-              <option value="Exam">Exam</option>
-              <option value="Project Report">Project Report</option>
-              <option value="Lab Manual">Lab Manual</option>
-            </select>
-
-            <input
+	        <div className="card-section">
+	          <label className="section-label">Assessment Details</label>
+	          <div className="grid-row">
+	            <ThemedSelect
+	              value={assessmentType}
+	              onChange={(e) => setAssessmentType(e.target.value)}
+	              className="input-field themed-field field-lg"
+	              options={assessmentTypeOptions}
+	              placeholder="Assessment Type"
+	            />
+	
+	            <input
               type="number"
               value={numQuestions}
               onChange={handleNumQuestionsChange}
@@ -330,88 +353,73 @@ const AssessmentCreate = () => {
           )}
         </div>
 
-        {questionsConfig.length > 0 && (
-          <div className="card-section">
-            <label className="section-label">Question Setup</label>
-            <div className="questions-list">
-              {questionsConfig.map((q, index) => (
-                <div
-                  key={index}
-                  className="question-row"
-                  style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginBottom: "15px" }}
-                >
-                  <span className="q-index" style={{ fontWeight: "bold", color: "#7c3aed" }}>Q{index + 1}</span>
-
-                  {assessmentType === "Quiz/MCQs" && (
-                    <select
-                      value={q.question_type || "MCQ"}
-                      onChange={(e) => handleQuestionConfigChange(index, "question_type", e.target.value)}
-                      className="input-field"
-                      style={{ flex: 1, minWidth: "120px" }}
-                    >
-                      <option value="MCQ">MCQ</option>
-                      <option value="Short Question">Short</option>
-                    </select>
-                  )}
-
-                  <select
-                    value={q.clo}
-                    onChange={(e) => handleQuestionConfigChange(index, "clo", e.target.value)}
-                    className="input-field"
-                    style={{ flex: 2, minWidth: "150px" }}
-                    required
-                  >
-                    <option value="">CLO</option>
-                    {availableClos.map(clo => (
-                      <option key={clo.id} value={clo.code}>
-                        {clo.code} ({clo.bloom_level})
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={q.bloom_level}
-                    onChange={(e) => handleQuestionConfigChange(index, "bloom_level", e.target.value)}
-                    className="input-field"
-                    style={{ flex: 1, minWidth: "100px" }}
-                    required
-                  >
-                    <option value="">Bloom</option>
-                    {['C1','C2','C3','C4','C5','C6','P2','P3','P4','P5','P6','P7','A1','A2','A3','A4','A5'].map(lvl => (
-                      <option key={lvl} value={lvl}>{lvl}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={q.difficulty}
-                    onChange={(e) => handleQuestionConfigChange(index, "difficulty", e.target.value)}
-                    className="input-field"
-                    style={{ flex: 1, minWidth: "100px" }}
-                  >
-                    <option value="Easy">Easy</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Hard">Hard</option>
-                  </select>
+	        {questionsConfig.length > 0 && (
+	          <div className="card-section">
+	            <label className="section-label">Question Setup</label>
+	            <div className="questions-list">
+	              {questionsConfig.map((q, index) => (
+	                <div
+	                  key={index}
+	                  className="question-row assessment-question-row"
+	                >
+	                  <span className="q-index assessment-q-index">Q{index + 1}</span>
+	
+	                  {assessmentType === "Quiz/MCQs" && (
+	                    <ThemedSelect
+	                      value={q.question_type || "MCQ"}
+	                      onChange={(e) => handleQuestionConfigChange(index, "question_type", e.target.value)}
+	                      className="input-field themed-field field-sm"
+	                      options={questionTypeOptions}
+	                      placeholder="Type"
+	                    />
+	                  )}
+	
+	                  <ThemedSelect
+	                    value={q.clo}
+	                    onChange={(e) => handleQuestionConfigChange(index, "clo", e.target.value)}
+	                    className="input-field themed-field field-lg"
+	                    options={availableClos.map((clo) => ({
+                          value: clo.code,
+                          label: `${clo.code} (${clo.bloom_level})`,
+                        }))}
+	                    placeholder="CLO"
+	                  />
+	
+	                  <ThemedSelect
+	                    value={q.bloom_level}
+	                    onChange={(e) => handleQuestionConfigChange(index, "bloom_level", e.target.value)}
+	                    className="input-field themed-field field-sm"
+	                    options={bloomLevelOptions}
+	                    placeholder="Bloom"
+	                  />
+	
+	                  <ThemedSelect
+	                    value={q.difficulty}
+	                    onChange={(e) => handleQuestionConfigChange(index, "difficulty", e.target.value)}
+	                    className="input-field themed-field field-sm"
+	                    options={difficultyOptions}
+	                    placeholder="Difficulty"
+	                  />
 
                   <input
                     type="number"
                     value={q.weightage}
-                    onChange={(e) => handleQuestionConfigChange(index, "weightage", e.target.value)}
-                    className="input-field"
-                    placeholder="Marks"
-                    style={{ flex: 1, minWidth: "80px" }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="action-bar" style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
-          <button
-            type="submit"
-            className="generate-btn"
-            disabled={loading}
+	                    onChange={(e) => handleQuestionConfigChange(index, "weightage", e.target.value)}
+	                    className="input-field"
+	                    placeholder="Marks"
+	                    data-field-size="xs"
+	                  />
+	                </div>
+	              ))}
+	            </div>
+	          </div>
+	        )}
+	
+	        <div className="action-bar assessment-action-bar">
+	          <button
+	            type="submit"
+	            className="generate-btn"
+	            disabled={loading}
           >
             {loading ? "Generating..." : "Generate Assessment"}
           </button>
@@ -419,21 +427,21 @@ const AssessmentCreate = () => {
       </form>
 
       {error && <p className="error-msg">{error}</p>}
-      {success && <p className="success-msg">{success}</p>}
+	      {hasCompletedGeneration && success && <p className="success-msg">{success}</p>}
       {generationState.status === "in_progress" && !hasAssessmentGenerationInFlight() && (
         <p className="error-msg">
           A generation request was in progress, but this page was refreshed. Please check the course assessments or generate again.
         </p>
       )}
 
-      {generatedAssessment && (
-        <div className="assessment-form" style={{ marginTop: "20px" }}>
-          <div className="card-section">
-            <label className="section-label">Generated Assessment</label>
-            <div className="action-bar" style={{ justifyContent: "flex-start", gap: "10px" }}>
-              <button
-                type="button"
-                className="generate-btn"
+		      {hasCompletedGeneration && (
+		        <div className="assessment-form generated-assessment-wrap">
+	          <div className="card-section">
+	            <label className="section-label">Generated Assessment</label>
+	            <div className="action-bar generated-action-bar">
+	              <button
+	                type="button"
+	                className="generate-btn"
                 onClick={() => handleDownloadZip(generatedAssessment.id)}
               >
                 Download ZIP
@@ -456,26 +464,26 @@ const AssessmentCreate = () => {
             </div>
           </div>
 
-          <div className="card-section">
-            <label className="section-label">Questions Preview</label>
-            {generatedQuestions.length > 0 ? (
-              <div className="questions-list">
-                {generatedQuestions.map((q, index) => (
-                  <div key={q.id || index} className="question-row" style={{ alignItems: "flex-start" }}>
-                    <span className="q-index">Q{index + 1}</span>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%" }}>
-                      <div>{q.question || "Question text not available."}</div>
-                      <div style={{ fontSize: "0.9rem", opacity: 0.8 }}>
-                        Marks: {q.marks || "N/A"}{" "}
-                        {q.meta?.clo ? `| CLO: ${q.meta.clo}` : ""}
-                        {q.meta?.bloom ? ` | Bloom: ${q.meta.bloom}` : ""}
-                        {q.meta?.difficulty ? ` | Difficulty: ${q.meta.difficulty}` : ""}
-                      </div>
-                      {Array.isArray(q.options) && q.options.length > 0 && (
-                        <div style={{ fontSize: "0.9rem", opacity: 0.85 }}>
-                          {q.options.join("  ")}
-                        </div>
-                      )}
+	          <div className="card-section">
+	            <label className="section-label">Questions Preview</label>
+	            {generatedQuestions.length > 0 ? (
+	              <div className="questions-list">
+	                {generatedQuestions.map((q, index) => (
+	                  <div key={q.id || index} className="question-row generated-question-row">
+	                    <span className="q-index">Q{index + 1}</span>
+	                    <div className="generated-question-content">
+	                      <div>{q.question || "Question text not available."}</div>
+	                      <div className="generated-question-meta">
+	                        Marks: {q.marks || "N/A"}{" "}
+	                        {q.meta?.clo ? `| CLO: ${q.meta.clo}` : ""}
+	                        {q.meta?.bloom ? ` | Bloom: ${q.meta.bloom}` : ""}
+	                        {q.meta?.difficulty ? ` | Difficulty: ${q.meta.difficulty}` : ""}
+	                      </div>
+	                      {Array.isArray(q.options) && q.options.length > 0 && (
+	                        <div className="generated-question-options">
+	                          {q.options.join("  ")}
+	                        </div>
+	                      )}
                     </div>
                   </div>
                 ))}

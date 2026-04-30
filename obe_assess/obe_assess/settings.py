@@ -84,17 +84,31 @@ WSGI_APPLICATION = 'obe_assess.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+DB_ENGINE = os.getenv("DB_ENGINE", "django.db.backends.sqlite3").strip()
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', ''),
-        'USER': os.getenv('DB_USER', ''),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', ''),
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-}
+elif DB_ENGINE == "django.db.backends.sqlite3":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / os.getenv("SQLITE_NAME", "db.sqlite3"),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.getenv('DB_NAME', ''),
+            'USER': os.getenv('DB_USER', ''),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', ''),
+        }
+    }
 AUTH_USER_MODEL = 'users.User'  # point to our custom user model
 
 # CORS - allow any origin, method, and header

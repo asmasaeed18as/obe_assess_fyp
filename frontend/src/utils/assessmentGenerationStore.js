@@ -18,7 +18,15 @@ const loadState = () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...defaultState };
     const parsed = JSON.parse(raw);
-    return { ...defaultState, ...parsed };
+    const next = { ...defaultState, ...parsed };
+
+    // Only resume genuinely active work after a refresh.
+    // Completed/error states should not reopen success UI on a later visit.
+    if (next.status !== "in_progress") {
+      return { ...defaultState };
+    }
+
+    return next;
   } catch {
     return { ...defaultState };
   }

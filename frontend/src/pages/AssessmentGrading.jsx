@@ -3,6 +3,7 @@ import { useGrading } from "../contexts/GradingContext";
 import api from "../api/axios";
 import "../styles/AssessmentCreate.css"; 
 import "../styles/AssessmentGrading.css"; 
+import ThemedSelect from "../components/ThemedSelect";
 
 const AssessmentGrading = () => {
   const [studentFile, setStudentFile] = useState(null);
@@ -12,11 +13,16 @@ const AssessmentGrading = () => {
   const { loading, error, result, results, grade, reset } = useGrading();
   const [validationError, setValidationError] = useState("");
 
+  const courseOptions = coursesList.map((course) => ({
+    value: String(course.id),
+    label: `${course.code} - ${course.title}`,
+  }));
+
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         const res = await api.get("/courses/");
-        setCoursesList(Array.isArray(res.data) ? res.data : []);
+        setCoursesList(Array.isArray(res.data) ? res.data : (res.data?.results || []));
       } catch (err) {
         setCoursesList([]);
       }
@@ -64,19 +70,13 @@ const AssessmentGrading = () => {
         <form className="assessment-form" onSubmit={handleGrade}>
           <div className="card-section">
             <label className="section-label">Select Course</label>
-            <select
-              className="input-field"
+            <ThemedSelect
+              className="input-field themed-field field-lg"
               value={selectedCourseId}
               onChange={(e) => setSelectedCourseId(e.target.value)}
-              required
-            >
-              <option value="">Choose a Course</option>
-              {coursesList.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.code} - {course.title}
-                </option>
-              ))}
-            </select>
+              options={courseOptions}
+              placeholder="Choose a Course"
+            />
           </div>
 
           <div className="card-section">
