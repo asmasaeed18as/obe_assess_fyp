@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'assessment_creation',
     'course_management',
     'assessment_marking',
+    'llm_integration',
 ]
 
 MIDDLEWARE = [
