@@ -120,10 +120,6 @@ const InstructorCourseDetail = () => {
             <span className="course-detail-label">Enrollment Code</span>
             <strong>{course.enrollment_code || "N/A"}</strong>
           </div>
-          <div className="course-detail-chip">
-            <span className="course-detail-label">Students</span>
-            <strong>{course.students_count ?? 0}</strong>
-          </div>
         </div>
       </header>
 

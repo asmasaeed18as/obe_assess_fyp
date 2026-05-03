@@ -60,6 +60,9 @@ const StudentCourseDetail = () => {
           <h1 className="course-page-title">{course.title}</h1>
           <div className="course-tags">
             <span className="tag-badge blue">{course.code}</span>
+            {course.section_name && (
+              <span className="tag-badge light">Section {course.section_name}</span>
+            )}
           </div>
         </div>
       </div>

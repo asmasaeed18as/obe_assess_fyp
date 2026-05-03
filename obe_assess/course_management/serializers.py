@@ -82,6 +82,30 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = ["id", "code", "title", "credit_hours"]
 
+class CourseSectionDetailSerializer(serializers.ModelSerializer):
+    """
+    Detail view for a specific section, used by course detail pages when the URL includes a section UUID.
+    """
+    title = serializers.ReadOnlyField(source='course.title')
+    code = serializers.ReadOnlyField(source='course.code')
+    students_count = serializers.SerializerMethodField()
+    semester_name = serializers.ReadOnlyField(source='semester.name')
+
+    class Meta:
+        model = CourseSection
+        fields = [
+            "id",
+            "title",
+            "code",
+            "section_name",
+            "semester_name",
+            "enrollment_code",
+            "students_count",
+        ]
+
+    def get_students_count(self, obj):
+        return obj.enrollments.count()
+
 class CLOSerializer(serializers.ModelSerializer):
     class Meta:
         model = CLO

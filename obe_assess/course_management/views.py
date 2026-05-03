@@ -19,7 +19,7 @@ from assessment_marking.utils import remap_course_submissions
 # Import Serializers
 from .serializers import (
     DepartmentSerializer, ProgramSerializer, StudentBatchSerializer,
-    CourseSectionSerializer, CourseSerializer, 
+    CourseSectionSerializer, CourseSerializer, CourseSectionDetailSerializer,
     CourseEnrollmentSerializer,  # ✅ FIXED NAME HERE
     CourseOutlineSerializer, CLOSerializer
 )
@@ -240,7 +240,7 @@ class CourseDetailBySectionView(APIView):
 
     def get(self, request, section_id, *args, **kwargs):
         section = get_object_or_404(CourseSection, id=section_id)
-        serializer = CourseSerializer(section.course)
+        serializer = CourseSectionDetailSerializer(section)
         return Response(serializer.data)
 
 
