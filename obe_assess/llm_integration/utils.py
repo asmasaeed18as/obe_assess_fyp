@@ -1,5 +1,156 @@
 import json
 import re
+import os
+from openai import OpenAI
+
+
+def _get_groq_client():
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise ValueError("GROQ_API_KEY is not set in environment variables")
+    base_url = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+    return OpenAI(api_key=api_key, base_url=base_url)
+
+
+def call_groq(prompt, model=None, temperature=0.1, top_p=0.9):
+    model = model or os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    client = _get_groq_client()
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+        top_p=top_p,
+    )
+    return resp.choices[0].message.content.strip()
+
+
+def generate_questions_via_groq(text, assessment_type, questions_config):
+    """
+    Build the assessment prompt, call Groq, parse the response, and return
+    {"questions": [...], "metadata": {...}} — same contract as the old FastAPI /generate.
+    """
+    num_questions = len(questions_config)
+
+    requirements_list = ""
+    for q in questions_config:
+        q_type = q.get("question_type", "Standard")
+        if assessment_type == "Quiz/MCQs":
+            if q_type in ["Multiple Choice", "MCQ"]:
+                nudge = "FORMAT: Multiple Choice. TOPIC: Extract a concept from the text."
+            else:
+                nudge = "FORMAT: Detailed Essay/Short Answer. TOPIC: Extract a concept from the text."
+        else:
+            nudge = ""
+        requirements_list += (
+            f"- Item ID {q['id']}: {nudge} {q['weightage']} Marks, "
+            f"CLO: {q['clo']}, Bloom Level: {q['bloom_level']}, Difficulty: {q['difficulty']}\n"
+        )
+
+    schema = """{
+    "questions": [
+        {
+            "id": <Match ITEM ID exactly>,
+            "question": "<question text>",
+            "options": <["A","B","C","D"] for MCQ or null>,
+            "answer": "<full correct answer or model solution>",
+            "marks": "<Marks>",
+            "rubric": {
+                "Excellent": "<criteria for full marks>",
+                "Average": "<criteria for partial marks>",
+                "Poor": "<criteria for zero marks>"
+            }
+        }
+    ]
+}"""
+
+    type_instructions = {
+        "Quiz/MCQs": (
+            "You are a precise university quiz master.\n"
+            "Generate Multiple Choice Questions (MCQs) and Short Questions strictly following the rules.\n"
+            "Even for short questions, keep the 'options' array (fill with dummy text if needed).\n"
+            f"CRITICAL: YOU MUST GENERATE EXACTLY {num_questions} ITEMS. "
+            f"YOUR LAST ITEM MUST HAVE \"id\": {num_questions}."
+        ),
+        "Lab Manual": (
+            "You are a senior computer science lab instructor.\n"
+            "Generate hands-on, practical Lab Tasks (code, commands, analysis).\n"
+            "The 'question' is the task scenario. The 'answer' is the expected output/solution. "
+            "'options' MUST be null."
+        ),
+        "Project Report": (
+            "You are a university project supervisor.\n"
+            "Generate Project Proposals/Milestones.\n"
+            "The 'question' is the Problem Statement. The 'answer' is the Evaluation Methodology. "
+            "'options' MUST be null."
+        ),
+        "Assignment": (
+            "You are an academic professor.\n"
+            "Generate high-level analytical, mathematical, or theoretical questions.\n"
+            "Questions must be open-ended. The 'answer' is the model solution. 'options' MUST be null."
+        ),
+    }
+    instructions = type_instructions.get(
+        assessment_type,
+        "You are a strict academic examiner.\nGenerate standard exam questions. 'options' MUST be null.",
+    )
+
+    prompt = (
+        f"You are an expert academic content creation AI.\n{instructions}\n\n"
+        f"CONTEXT MATERIAL:\n{text[:20000]}\n\n"
+        f"REQUIREMENTS LIST:\n{requirements_list}\n"
+        f"Generate exactly {num_questions} items.\n\n"
+        f"STRICT JSON OUTPUT — return ONLY the JSON below, no markdown code blocks:\n{schema}"
+    )
+
+    result_text = call_groq(prompt, temperature=0.1, top_p=0.9)
+    final_questions = parse_and_clean_assessment(result_text, questions_config, {"structure": "Standard"})
+
+    return {
+        "metadata": {"assessment_type": assessment_type, "total_questions": num_questions},
+        "questions": final_questions,
+    }
+
+
+def mark_question_via_groq(question_text, student_answer, max_marks, criteria):
+    """
+    Call Groq to mark a single question and return
+    {"marks_awarded": int, "max_marks": int, "feedback": str}.
+    """
+    if criteria:
+        criteria_text = "\n".join(f"- {c['criterion']} ({c['marks']} marks)" for c in criteria)
+    else:
+        criteria_text = "NO SPECIFIC CRITERIA. Use general academic judgement."
+
+    prompt = (
+        "You are a fair academic assessor. Mark the student's answer against the criteria.\n"
+        "Respond with ONLY a JSON object — no extra text, no markdown.\n\n"
+        f"Question: {question_text}\n"
+        f"Student Answer: {student_answer}\n\n"
+        f"Marking Criteria (Total: {max_marks} marks):\n{criteria_text}\n\n"
+        "Required JSON:\n"
+        "{\n"
+        f'  "marks_awarded": <integer 0–{max_marks}>,\n'
+        f'  "max_marks": {max_marks},\n'
+        '  "feedback": "detailed justification"\n'
+        "}"
+    )
+
+    raw = call_groq(prompt, temperature=0.1, top_p=0.9)
+    cleaned = clean_and_extract_json(raw)
+
+    try:
+        data = json.loads(cleaned)
+        return {
+            "marks_awarded": int(float(data.get("marks_awarded", 0))),
+            "max_marks": int(data.get("max_marks", max_marks)),
+            "feedback": str(data.get("feedback", "No feedback provided.")),
+        }
+    except (json.JSONDecodeError, ValueError):
+        return {
+            "marks_awarded": 0,
+            "max_marks": max_marks,
+            "feedback": "Error: AI response was not valid JSON. Manual review recommended.",
+        }
 
 
 def _safe_json_loads(text):

@@ -1,29 +1,26 @@
 # assessment_creation/views.py
-import requests, json
+import json
 import zipfile
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsInstructor  # ✅ Import your new custom permissio
+from .permissions import IsInstructor
 from django.http import FileResponse, Http404
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 
 from .models import LectureMaterial, Assessment
-from course_management.models import Course, CourseSection  # ✅ Import Course to link assessment
+from course_management.models import Course, CourseSection
 from .serializers import AssessmentSerializer
 from .utils import (
-    extract_text_from_pdf_filefield, 
-    generate_docx_assessment, 
+    extract_text_from_pdf_filefield,
+    generate_docx_assessment,
     generate_pdf_assessment,
-    generate_zip_bundle
+    generate_zip_bundle,
 )
-
-def _get_llm_generate_url():
-    base = (getattr(settings, "LLM_SERVICE_URL", "") or "http://127.0.0.1:8001").rstrip('/')
-    return f"{base}/generate"
+from llm_integration.utils import generate_questions_via_groq
 
 
 class UploadMaterialAndGenerateAssessment(APIView):
@@ -95,24 +92,16 @@ class UploadMaterialAndGenerateAssessment(APIView):
                 pass # Continue even if outline fails
 
         # 5. Call LLM Microservice
-        payload = {
-            "text": text_content[:40000], # Truncate to avoid token limits
-            "assessment_type": assessment_type,
-            "questions_config": questions_config
-        }
-
         try:
-            resp = requests.post(_get_llm_generate_url(), json=payload, timeout=500)
-            resp.raise_for_status()
-            llm_result = resp.json()
-        except requests.exceptions.RequestException as e:
-            return Response({"error": f"Error connecting to LLM service: {str(e)}"}, status=500)
-        except ValueError:
-            return Response({"error": "LLM service returned non-JSON response."}, status=500)
+            llm_result = generate_questions_via_groq(
+                text_content[:40000], assessment_type, questions_config
+            )
+        except Exception as e:
+            return Response({"error": f"LLM generation failed: {str(e)}"}, status=500)
 
         questions = llm_result.get("questions")
         if not questions or not isinstance(questions, list):
-            return Response({"error": "Invalid response from LLM service"}, status=500)
+            return Response({"error": "LLM returned no questions"}, status=500)
 
         # 6. Save Assessment object linked to the Course
         clo_summary = ", ".join(sorted(list(set([q.get('clo', '') for q in questions_config if q.get('clo')]))))

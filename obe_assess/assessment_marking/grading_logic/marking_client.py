@@ -1,42 +1,14 @@
-﻿import requests
-from django.conf import settings
+﻿from django.conf import settings
 from .preprocesspipeline import preprocess
+from llm_integration.utils import mark_question_via_groq
 import os
 import csv
 
 def call_mark_api(q_text, student_ans, criteria, max_marks):
-    """Call the LLM Service /mark endpoint"""
-    llm_url = (getattr(settings, "LLM_SERVICE_URL", "") or "http://127.0.0.1:8001").rstrip('/')
-    payload = {
-        "question_text": q_text,
-        "student_answer": student_ans,
-        "max_marks": max_marks,
-        "criteria": criteria
-    }
     try:
-        resp = requests.post(f"{llm_url}/mark", json=payload, timeout=120)
-        resp.raise_for_status()
-        data = resp.json()
-
-        # LOGIC FIX: Don't trust the AI to use the exact key "marks_awarded"
-        # We check all common possibilities
-        score = data.get("marks_awarded")
-        if score is None:
-            score = data.get("marks") or data.get("score") or 0
-
-        # Ensure the score is an actual number (int or float)
-        try:
-            score = int(float(score))
-        except (ValueError, TypeError):
-            score = 0
-
-        return {
-            "marks_awarded": score,
-            "max_marks": max_marks,
-            "feedback": data.get("feedback", "")
-        }
+        return mark_question_via_groq(q_text, student_ans, max_marks, criteria)
     except Exception as e:
-        print(f"LLM API Error: {e}")
+        print(f"LLM Marking Error: {e}")
         return {"marks_awarded": 0, "max_marks": max_marks, "feedback": f"AI Error: {str(e)}"}
 
 def mark_assessment_logic(student_doc_path, rubric_doc_path):
