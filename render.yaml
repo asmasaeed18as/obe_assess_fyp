@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: obe-assess-backend
+    env: python
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn obe_assess.wsgi:application --chdir obe_assess --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/
+
+  - type: web
+    name: obe-assess-llm
+    env: python
+    branch: main
+    buildCommand: cd llm_service && pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
+    healthCheckPath: /
+
+  - type: static
+    name: obe-assess-frontend
+    env: static
+    branch: main
+    buildCommand: cd frontend && npm install && npm run build
+    publishDir: frontend/dist

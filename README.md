@@ -111,6 +111,34 @@ If you are assigned a new feature, follow these steps to keep the structure clea
 
 ---
 
+## ☁️ Render Deployment Setup
+
+This project includes a Render configuration example in `render.yaml` and env variable templates in `.env.example` and `frontend/.env.example`.
+
+1. Create a new Render service for the Django backend:
+   * Service type: `Web Service`
+   * Environment: `Python`
+   * Start Command: `gunicorn obe_assess.wsgi:application --chdir obe_assess --bind 0.0.0.0:$PORT`
+   * Build Command: `pip install -r requirements.txt`
+   * Set `SECRET_KEY`, `DATABASE_URL`, and `LLM_SERVICE_URL` in Render dashboard secrets.
+
+2. Create a new Render service for the LLM microservice:
+   * Service type: `Web Service`
+   * Environment: `Python`
+   * Start Command: `uvicorn main:app --host 0.0.0.0 --port 8000`
+   * Build Command: `cd llm_service && pip install -r requirements.txt`
+   * Set `GROQ_API_KEY`, `GROQ_BASE_URL`, and `GROQ_MODEL` as secrets.
+
+3. Create a new static site service for the React frontend:
+   * Service type: `Static Site`
+   * Build Command: `cd frontend && npm install && npm run build`
+   * Publish Directory: `frontend/dist`
+   * Set `VITE_API_BASE_URL` to your backend API endpoint.
+
+4. Use `.env.example` as a reference for local `.env` values and never commit real secrets.
+
+---
+
 **to create supersuser to access the backend admin panel and database**
 You need a superuser to access the Django Admin panel. Run this in your terminal:
 

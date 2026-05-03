@@ -1,0 +1,84 @@
+name: obe-assess-local
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: obe_assess_local_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: obe_db
+      POSTGRES_USER: obe_user
+      POSTGRES_PASSWORD: obe_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - obe_assess_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U obe_user -d obe_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: python:3.11-slim
+    container_name: obe_assess_local_backend
+    restart: unless-stopped
+    working_dir: /app/obe_assess
+    volumes:
+      - .:/app
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: local-dev-secret-key
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: obe_db
+      DB_USER: obe_user
+      DB_PASSWORD: obe_password
+      DB_HOST: db
+      DB_PORT: "5432"
+      LLM_SERVICE_URL: http://llm-service:8000
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      llm-service:
+        condition: service_started
+    command: >
+      sh -c "pip install --no-cache-dir -r /app/requirements.txt &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  llm-service:
+    build:
+      context: ./llm_service
+    container_name: obe_assess_local_llm
+    restart: unless-stopped
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_BASE_URL: ${GROQ_BASE_URL:-https://api.groq.com/openai/v1}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-70b-versatile}
+    ports:
+      - "8001:8000"
+
+  frontend:
+    image: node:22-alpine
+    container_name: obe_assess_local_frontend
+    restart: unless-stopped
+    working_dir: /app/frontend
+    volumes:
+      - .:/app
+      - frontend_node_modules:/app/frontend/node_modules
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    command: >
+      sh -c "npm install &&
+             npm run dev -- --host 0.0.0.0"
+
+volumes:
+  obe_assess_postgres_data:
+  frontend_node_modules:
