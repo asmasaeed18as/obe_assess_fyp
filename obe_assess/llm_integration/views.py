@@ -28,7 +28,7 @@ def call_groq(prompt, model=None, options=None):
             "top_p": 0.9
         }
 
-    model = model or os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
+    model = model or os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     print(f"--> Sending request to Groq ({model})...")
     try:

@@ -2,15 +2,15 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
-import requests
+from typing import List, Optional
 import json
-import random
 from response_parser import parse_and_clean_assessment, clean_and_extract_json
-import re
 from fastapi.responses import JSONResponse
 import os
 from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="LLM Service (Hosted LLM)")
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
@@ -23,13 +23,11 @@ app.add_middleware(
 
 @app.get("/")
 def health_check():
-    return {"status": "LLM Service is live!", "model": "gemma3-1b"}
+    return {"status": "LLM Service is live!", "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")}
 
 # ==========================================
 # 1. SHARED HELPERS
 # ==========================================
-
-import re
 
 def _get_groq_client():
     api_key = os.getenv("GROQ_API_KEY")
@@ -49,20 +47,20 @@ def call_ollama(prompt, model=None, options=None):
             "top_p": 0.9
         }
 
-    model = model or os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
+    model = model or os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     print(f"--> Sending request to Groq ({model})...")
     try:
         client = _get_groq_client()
-        resp = client.responses.create(
+        resp = client.chat.completions.create(
             model=model,
-            input=prompt,
+            messages=[{"role": "user", "content": prompt}],
             temperature=options.get("temperature", 0.2),
             top_p=options.get("top_p", 0.9),
         )
-        return resp.output_text.strip()
+        return resp.choices[0].message.content.strip()
     except Exception as e:
-        print(f"? Groq Error: {e}")
+        print(f"Groq Error: {e}")
         raise HTTPException(status_code=500, detail=f"Groq Error: {str(e)}")
 
 # ==========================================

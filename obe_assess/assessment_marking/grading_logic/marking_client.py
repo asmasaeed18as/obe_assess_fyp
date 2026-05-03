@@ -17,7 +17,7 @@ def call_mark_api(q_text, student_ans, criteria, max_marks):
     }
     # ... (existing payload code) ...
     try:
-        resp = requests.post(f"{LLM_URL}/mark", json=payload, timeout=40)
+        resp = requests.post(f"{LLM_URL}/mark", json=payload, timeout=120)
         resp.raise_for_status()
         data = resp.json()
 

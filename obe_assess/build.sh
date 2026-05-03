@@ -9,9 +9,13 @@ pip install -r requirements.txt
 python manage.py collectstatic --no-input
 python manage.py migrate
 
-# Create admin user (idempotent — won't fail if user already exists)
-python manage.py create_admin \
-  --email aima@gmail.com \
-  --password aima@123 \
-  --first-name Admin \
-  --last-name User
+# Create admin user from environment variables (idempotent — won't fail if user already exists)
+if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
+  python manage.py create_admin \
+    --email "$ADMIN_EMAIL" \
+    --password "$ADMIN_PASSWORD" \
+    --first-name "${ADMIN_FIRST_NAME:-Admin}" \
+    --last-name "${ADMIN_LAST_NAME:-User}"
+else
+  echo "Skipping admin user creation. Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables."
+fi

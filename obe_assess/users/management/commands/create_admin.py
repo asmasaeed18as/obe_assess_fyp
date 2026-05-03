@@ -28,6 +28,11 @@ class Command(BaseCommand):
             return
 
         try:
+            # Check if user already exists (idempotent)
+            if User.objects.filter(email=email).exists():
+                self.stdout.write(self.style.WARNING(f'Admin user already exists: {email}'))
+                return
+
             user = User.objects.create_superuser(
                 email=email,
                 password=password,
