@@ -157,7 +157,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # LLM service URL (adjust if deployed elsewhere)
-LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://127.0.0.1:8001")
+LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "").strip() or "http://127.0.0.1:8001"
 print(f"LLM_SERVICE_URL={LLM_SERVICE_URL}")
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

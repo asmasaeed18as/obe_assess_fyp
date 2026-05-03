@@ -4,20 +4,17 @@ from .preprocesspipeline import preprocess
 import os
 import csv
 
-# LLM Service URL
-LLM_URL = getattr(settings, "LLM_SERVICE_URL", "http://127.0.0.1:8001")
-
 def call_mark_api(q_text, student_ans, criteria, max_marks):
     """Call the LLM Service /mark endpoint"""
+    llm_url = (getattr(settings, "LLM_SERVICE_URL", "") or "http://127.0.0.1:8001").rstrip('/')
     payload = {
         "question_text": q_text,
         "student_answer": student_ans,
         "max_marks": max_marks,
         "criteria": criteria
     }
-    # ... (existing payload code) ...
     try:
-        resp = requests.post(f"{LLM_URL}/mark", json=payload, timeout=120)
+        resp = requests.post(f"{llm_url}/mark", json=payload, timeout=120)
         resp.raise_for_status()
         data = resp.json()
 

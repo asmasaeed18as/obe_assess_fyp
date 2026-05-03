@@ -21,11 +21,9 @@ from .utils import (
     generate_zip_bundle
 )
 
-# ✅ SMART URL CONFIGURATION
-# 1. Grab the base URL (defaults to 127.0.0.1:8001) and strip any accidental trailing slashes
-BASE_LLM_URL = getattr(settings, "LLM_SERVICE_URL", "http://127.0.0.1:8001").rstrip('/')
-# 2. Append the specific endpoint for THIS app
-LLM_GENERATE_URL = f"{BASE_LLM_URL}/generate"
+def _get_llm_generate_url():
+    base = (getattr(settings, "LLM_SERVICE_URL", "") or "http://127.0.0.1:8001").rstrip('/')
+    return f"{base}/generate"
 
 
 class UploadMaterialAndGenerateAssessment(APIView):
@@ -104,8 +102,7 @@ class UploadMaterialAndGenerateAssessment(APIView):
         }
 
         try:
-            # ✅ Uses the correctly built LLM_GENERATE_URL 
-            resp = requests.post(LLM_GENERATE_URL, json=payload, timeout=500)
+            resp = requests.post(_get_llm_generate_url(), json=payload, timeout=500)
             resp.raise_for_status()
             llm_result = resp.json()
         except requests.exceptions.RequestException as e:
