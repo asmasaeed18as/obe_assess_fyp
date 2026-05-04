@@ -64,6 +64,19 @@ def _normalize_bloom_level(raw_bloom):
     return value[:20]
 
 
+def _detect_assessment_type(title):
+    t = (title or '').lower()
+    if any(w in t for w in ['quiz', 'mcq', 'mcqs']):
+        return 'Quiz'
+    if any(w in t for w in ['exam', 'final', 'midterm', 'mid-term', 'mid term']):
+        return 'Exam'
+    if any(w in t for w in ['lab', 'practical']):
+        return 'Lab'
+    if any(w in t for w in ['project']):
+        return 'Project'
+    return 'Assignment'
+
+
 def _normalize_mapped_plos(raw_plos):
     if isinstance(raw_plos, str):
         candidates = [raw_plos]
@@ -245,32 +258,28 @@ class CourseDetailBySectionView(APIView):
 
 
 class CourseCLOAnalyticsView(APIView):
-    """Compute CLO attainment stats for a course based on graded submissions.
-
-    Returns per-CLO: total students, average attainment, passed, failed, distribution.
-    """
+    """Compute CLO attainment stats for a course based on graded submissions."""
     permission_classes = [AllowAny]
 
     def get(self, request, pk, *args, **kwargs):
+        from calendar import month_abbr as _month_abbr
+
         course = get_object_or_404(Course, pk=pk)
-        # Ensure CLO mapping is up to date for this course before computing analytics
         remap_course_submissions(course)
 
-        # Threshold (default 60%) - can be overridden by query param ?threshold=70
         try:
             threshold = float(request.query_params.get('threshold', 60))
         except Exception:
             threshold = 60.0
 
-        # Build question -> CLO mapping from saved Assessments for this course
-        question_map = []  # list of dicts: {'text':..., 'clo':..., 'possible': int}
+        # Build question -> CLO mapping from saved Assessments
+        question_map = []
         assessments = Assessment.objects.filter(course=course)
         latest_assessment = assessments.order_by('-created_at').first()
         clo_by_index = []
         for a in assessments:
             r = a.result_json or {}
-            qs = r.get('questions', []) if isinstance(r, dict) else []
-            for q in qs:
+            for q in (r.get('questions', []) if isinstance(r, dict) else []):
                 qtext = (q.get('question') or '').strip()
                 meta = q.get('meta', {}) if isinstance(q.get('meta', {}), dict) else {}
                 clo = meta.get('clo') or q.get('clo') or 'UNMAPPED'
@@ -292,18 +301,24 @@ class CourseCLOAnalyticsView(APIView):
                 for q in ordered
             ]
 
-        # Gather graded submissions for this course
         submissions = GradedSubmission.objects.filter(course=course)
 
-        # Accumulate per-CLO per-student percentages
-        clo_students = {}  # clo -> list of {'cms_id':..., 'student_name':..., 'percent': float}
+        # Single pass: build all data structures simultaneously
+        clo_students = {}   # clo -> [{cms_id, student_name, percent}]
+        monthly_data = {}   # (year, month) -> [overall_pct]
+        type_clo_raw = {}   # atype -> {clo -> [pcts]}
 
         for s in submissions:
             ai = s.ai_result_json or {}
             per_q = ai.get('per_question', {}) if isinstance(ai, dict) else {}
+            student_name = (ai.get('student_name') or
+                            (ai.get('student', {}).get('name') if isinstance(ai, dict) else None))
+            cms_id = (ai.get('cms_id') or
+                      (ai.get('student', {}).get('cms_id') if isinstance(ai, dict) else None))
 
-            # Per student totals per CLO
-            student_totals = {}  # clo -> {'obtained': int, 'possible': int}
+            student_totals = {}
+            overall_obtained = 0
+            overall_possible = 0
 
             for qid, qdata in per_q.items():
                 qtext = (qdata.get('question') or '').strip()
@@ -319,128 +334,103 @@ class CourseCLOAnalyticsView(APIView):
                 except Exception:
                     possible = 0
 
-                # Prefer mapped_clo from grading; fallback to question text matching
                 mapped_clo = qdata.get('mapped_clo') or qdata.get('clo')
                 norm_qtext = qtext.lower()
                 if not mapped_clo:
                     for m in question_map:
                         mq = (m['text'] or '').lower()
-                        if not mq:
-                            continue
-                        if norm_qtext == mq or norm_qtext in mq or mq in norm_qtext:
+                        if mq and (norm_qtext == mq or norm_qtext in mq or mq in norm_qtext):
                             mapped_clo = m['clo']
-                            # prefer mapping's possible if available
                             if m.get('possible'):
-                                possible = m.get('possible')
+                                possible = m['possible']
                             break
-
-                # Final fallback: map by question order (Q1 -> first CLO)
                 if not mapped_clo and clo_by_index:
                     try:
-                        qnum = int(''.join([c for c in str(qid) if c.isdigit()])) - 1
+                        qnum = int(''.join(c for c in str(qid) if c.isdigit())) - 1
                     except Exception:
                         qnum = None
                     if qnum is not None and 0 <= qnum < len(clo_by_index):
                         mapped_clo = clo_by_index[qnum]
-
                 if not mapped_clo:
                     mapped_clo = 'UNMAPPED'
 
                 agg = student_totals.setdefault(mapped_clo, {'obtained': 0, 'possible': 0})
                 agg['obtained'] += obtained
                 agg['possible'] += possible
-
-            # finalize per-clo percentages for this student
-            student_name = ai.get('student_name') or ai.get('student', {}).get('name') if isinstance(ai, dict) else None
-            cms_id = ai.get('cms_id') or ai.get('student', {}).get('cms_id') if isinstance(ai, dict) else None
+                overall_obtained += obtained
+                overall_possible += possible
 
             for clo, totals in student_totals.items():
-                possible = totals.get('possible', 0)
-                obtained = totals.get('obtained', 0)
-                percent = None
-                if possible > 0:
-                    try:
-                        percent = round((obtained / possible * 100), 2)
-                    except Exception:
-                        percent = None
+                p, o = totals['possible'], totals['obtained']
+                percent = round(o / p * 100, 2) if p > 0 else None
+                clo_students.setdefault(clo, []).append(
+                    {'cms_id': cms_id, 'student_name': student_name, 'percent': percent}
+                )
 
-                clo_students.setdefault(clo, []).append({
-                    'cms_id': cms_id,
-                    'student_name': student_name,
-                    'percent': percent
-                })
+            if overall_possible > 0:
+                pct = round(overall_obtained / overall_possible * 100, 2)
+                monthly_data.setdefault((s.created_at.year, s.created_at.month), []).append(pct)
 
-        # Build analytics per CLO
+            atype = _detect_assessment_type(s.title)
+            type_entry = type_clo_raw.setdefault(atype, {})
+            for clo, totals in student_totals.items():
+                p, o = totals['possible'], totals['obtained']
+                if p > 0:
+                    type_entry.setdefault(clo, []).append(round(o / p * 100, 2))
+
+        # Build per-CLO analytics
         result = {}
         for clo, students in clo_students.items():
-            # filter out None percentages when computing averages
             percents = [s['percent'] for s in students if isinstance(s.get('percent'), (int, float))]
-            total = len(students)
             avg = round(sum(percents) / len(percents), 2) if percents else None
-            passed = len([p for p in percents if p >= threshold])
-            failed = len([p for p in percents if p < threshold])
-
-            # distribution buckets
             buckets = {"0-50": 0, "50-60": 0, "60-70": 0, "70-80": 0, "80-90": 0, "90-100": 0}
             for p in percents:
-                if p < 50:
-                    buckets["0-50"] += 1
-                elif p < 60:
-                    buckets["50-60"] += 1
-                elif p < 70:
-                    buckets["60-70"] += 1
-                elif p < 80:
-                    buckets["70-80"] += 1
-                elif p < 90:
-                    buckets["80-90"] += 1
-                else:
-                    buckets["90-100"] += 1
-
-            # above average: compare to avg
-            above_avg = len([p for p in percents if avg is not None and p > avg])
-
+                if p < 50:   buckets["0-50"] += 1
+                elif p < 60: buckets["50-60"] += 1
+                elif p < 70: buckets["60-70"] += 1
+                elif p < 80: buckets["70-80"] += 1
+                elif p < 90: buckets["80-90"] += 1
+                else:        buckets["90-100"] += 1
             result[clo] = {
-                'total_students': total,
+                'total_students': len(students),
                 'students_with_score': len(percents),
                 'average_percent': avg,
-                'passed': passed,
-                'failed': failed,
-                'above_average': above_avg,
+                'passed': len([p for p in percents if p >= threshold]),
+                'failed': len([p for p in percents if p < threshold]),
+                'above_average': len([p for p in percents if avg is not None and p > avg]),
                 'distribution': buckets,
-                'students': students
+                'students': students,
             }
 
-        # Build chart-friendly list for frontend
         clo_chart = []
         avg_values = []
-        for clo, stats in sorted(result.items(), key=lambda x: x[0]):
+        for clo, stats in sorted(result.items()):
             avg = stats.get('average_percent')
             if isinstance(avg, (int, float)):
                 avg_values.append(avg)
-                clo_chart.append({
-                    'clo': clo,
-                    'obtained': avg,
-                    'possible': 100,
-                    'percent': avg
-                })
+                clo_chart.append({'clo': clo, 'obtained': avg, 'possible': 100, 'percent': avg})
             else:
-                clo_chart.append({
-                    'clo': clo,
-                    'obtained': 0,
-                    'possible': 100,
-                    'percent': 0
-                })
+                clo_chart.append({'clo': clo, 'obtained': 0, 'possible': 100, 'percent': 0})
 
-        total_obtained = round(sum(avg_values) / len(avg_values), 2) if avg_values else 0
-        total_possible = 100 if avg_values else 0
+        historical_trend = [
+            {'month': f"{_month_abbr[m]} {y}", 'avg_attainment': round(sum(pcts) / len(pcts), 2)}
+            for (y, m), pcts in sorted(monthly_data.items())
+        ]
+
+        assessment_type_stats = {
+            atype: {clo: round(sum(pcts) / len(pcts), 2) for clo, pcts in clo_pcts.items()}
+            for atype, clo_pcts in type_clo_raw.items()
+        }
 
         return Response({
             'course': {'id': course.id, 'code': course.code, 'title': course.title},
             'threshold': threshold,
             'clo_attainment': result,
             'clo_chart': clo_chart,
-            'total_obtained': total_obtained,
-            'total_possible': total_possible
+            'total_obtained': round(sum(avg_values) / len(avg_values), 2) if avg_values else 0,
+            'total_possible': 100 if avg_values else 0,
+            'historical_trend': historical_trend,
+            'assessment_type_stats': assessment_type_stats,
         })
 class UploadOutlineView(APIView):
     """

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(node -e \"const r = require\\('./node_modules/recharts'\\); console.log\\('RadarChart:', !!r.RadarChart, 'LineChart:', !!r.LineChart\\)\")"
     ]
   }
 }
