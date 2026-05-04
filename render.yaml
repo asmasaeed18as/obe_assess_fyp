@@ -21,3 +21,6 @@ services:
     branch: main
     buildCommand: cd frontend && npm install && npm run build
     publishDir: frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://obe-assess-backend.onrender.com/api

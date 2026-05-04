@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "https://obe-assess-fyp.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://obe-assess-backend.onrender.com/api",
 });
 
 // Automatically attach JWT token
